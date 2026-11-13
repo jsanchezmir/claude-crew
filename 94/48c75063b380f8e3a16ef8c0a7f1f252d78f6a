@@ -1,0 +1,100 @@
+FORK.md
+  s_fded5c159bb446::t_6ba33dec4980ca 27
+  s_fded5c159bb446::t_26e06020ee695c 67,72,173
+  s_fded5c159bb446::t_ca3ff236decf46 115
+  s_fded5c159bb446::t_700bd968382379 122
+  s_fded5c159bb446::t_7d2a01da323f90 26
+  s_fded5c159bb446::t_aeebf179e9dace 109
+  s_fded5c159bb446::t_95ad1832d2b88b 2,15-23,30-31,37,87-94,96-99,101-107,110-114,116-121,123,125-132,135-141,143-148,150,152-153,160,162-166,170-171,174
+  s_fded5c159bb446::t_d5c01caf2f92e8 108
+  s_fded5c159bb446::t_20afef5992e0a1 1,3-14,28,32-36,38-66,68-71,73-86,95,124,142,149,151,154-159,161,167-169
+  s_fded5c159bb446::t_883c2ae601eed4 24
+  s_fded5c159bb446::t_598158c1b967b0 25,172
+  s_fded5c159bb446::t_0fafc029aca8e7 100
+  s_fded5c159bb446::t_60c952def473ba 29,133-134
+fork/crew/UPSTREAM_SKILL.sha256
+  s_fded5c159bb446::t_60c952def473ba 1
+fork/supercrew/SKILL.md
+  s_fded5c159bb446::t_42ae0afadd92eb 3
+  s_fded5c159bb446::t_1cd5f36280228b 1-2,4-19
+fork/check.sh
+  s_fded5c159bb446::t_0f4e6021a4443f 69
+  s_fded5c159bb446::t_c9cb0175ff63b1 32
+  s_fded5c159bb446::t_60c952def473ba 78-86
+  s_fded5c159bb446::t_caf56625dc2686 103
+  s_fded5c159bb446::t_31deb610ddb4aa 88
+  s_fded5c159bb446::t_2bce0f4eaec7f6 1-15,17-19,21-31,33-67,77,100,111-114
+  s_fded5c159bb446::t_36bf805f6f8b60 20
+  s_fded5c159bb446::t_2e129753b8a5e2 16
+  s_fded5c159bb446::t_c8547cba4c8083 68,70-76,87,89-99,101-102,104-110
+plugins/savvy-flow/agents/savvy-heavy.md
+  s_fded5c159bb446::t_b144dd3ab2b4b6 4
+plugins/savvy-flow/agents/savvy-light.md
+  s_fded5c159bb446::t_f326b9dd7a568b 4
+plugins/savvy-progress/hooks/fork.tsx
+  s_fded5c159bb446::t_05ae960ee2966a 59-79
+  s_fded5c159bb446::t_dd3645a40652be 312,316-326
+  s_fded5c159bb446::t_0eea33e49e4c96 342-343
+  s_fded5c159bb446::t_c6d9a32eccc297 13
+  s_fded5c159bb446::t_0028c542975916 21-22
+  s_fded5c159bb446::t_b940e3ce719582 346-347
+  s_fded5c159bb446::t_adff330385e7c1 29
+  s_fded5c159bb446::t_2b694bc4e17c60 339-341,344-345,348-366,368-370,373-375
+  s_fded5c159bb446::t_8637fea7e92167 367,371-372
+  s_fded5c159bb446::t_3df1caf23362af 243-311,313-315,327-338
+  s_fded5c159bb446::t_3a7bae2d013c3c 229
+  s_fded5c159bb446::t_79b5ffec25c2ce 1-12,15-20,23-28,30-58,80-228,230-242
+  s_fded5c159bb446::t_3b20c0750d6ac7 14
+fork/supercrew/OVERRIDES.md
+  s_fded5c159bb446::t_eeac961ca4b38c 32-34
+  s_fded5c159bb446::t_e47f1a0aad3649 1-31,35-41,43,45-50
+  s_fded5c159bb446::t_5feddd50b02c83 44
+  s_fded5c159bb446::t_af489d06121c32 42
+fork/small-crew/OVERRIDES.md
+  s_fded5c159bb446::t_b09ea7c52beae4 5-6
+  s_fded5c159bb446::t_e355ebc7af616d 9
+  s_fded5c159bb446::t_226c5b45fdb5df 1-4,7-8,10-17
+plugins/savvy-flow/agents/savvy-medium.md
+  s_fded5c159bb446::t_3ca741f495bca0 4
+fork/small-crew/SKILL.md
+  s_fded5c159bb446::t_b019161cf436ff 1-19
+fork/crew/SKILL.md
+  s_fded5c159bb446::t_17a4768e2adba6 1-18
+plugins/savvy-flow/agents/savvy-reviewer.md
+  s_fded5c159bb446::t_334076e2ddcdf4 1-5,7-23
+  s_fded5c159bb446::t_60c952def473ba 6
+fork/crew/OVERRIDES.md
+  s_fded5c159bb446::t_de320f0fba672a 12-17,19-21,23-36,39
+  s_fded5c159bb446::t_d894ef6ae7ccb5 22
+  s_fded5c159bb446::t_b45abff5a59fbd 1-11,40-41,43-45,51-53,55,57,76-77
+  s_fded5c159bb446::t_d2d16c053538c2 18
+  s_fded5c159bb446::t_a69f26a378dc8b 42
+  s_fded5c159bb446::t_bfbcef1e0d4393 37-38
+  s_fded5c159bb446::t_c9129bb85a394b 46-50,54,56,58-75,78
+plugins/savvy-flow/agents/savvy-fable.md
+  s_fded5c159bb446::t_203fbfad270e8c 4
+plugins/savvy-progress/hooks/register.tsx
+  s_fded5c159bb446::t_3276311290400b 1035
+  s_fded5c159bb446::t_6a3c0ce73ad760 365,378,446,567,615,721,751-752,972,1050,1226-1227
+  s_fded5c159bb446::t_d894ef6ae7ccb5 800
+  s_fded5c159bb446::t_a43a3fef06813e 5
+  s_fded5c159bb446::t_9ff8066eda6d32 383
+plugins/savvy-flow/agents/savvy-careful.md
+  s_fded5c159bb446::t_8f31a07df8574a 4
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "9448c75063b380f8e3a16ef8c0a7f1f252d78f6a",
+  "prompts": {},
+  "sessions": {
+    "s_fded5c159bb446": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2b28d89a-24f4-4073-9120-38418fbfbd7b",
+        "model": "claude-haiku-5-5"
+      },
+      "human_author": "Jordi Sánchez <23667568+jsanchezmir@users.noreply.github.com>"
+    }
+  }
+}

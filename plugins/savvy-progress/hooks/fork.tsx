@@ -25,13 +25,16 @@
 //     a subagent's steps closed when its turn answered)
 //   - the Pane render: one line after `finished` is computed (orchestrator pinned first)
 //   - the band: the `crew` and `isWorking` lines (forkWorkers excludes the orchestrator row)
+//   - the band: `const fb = forkBand(...) // fork`, the two `const width = fb... // fork` lines, and
+//     the `{...FORK_DISMISS} // fork` line; `{...fb.row}`, `{...fb.column}`, `{...fb.crewGroup}` and
+//     `{...fb.svgBox}` are spread into the band's Boxes (inside JSX, so no comment)
 //
 // Exports that register.tsx reads while it loads (FORK_TIER_COLOR, FORK_TIER_MODEL,
 // FORK_CRAB_CSS, FORK_COSTUMES) are plain values, available at import time.
 //
 // Panel decisions made here: the orchestrator always wears the xhigh "wololo" costume,
 // whatever its effort (the other orchestrator costumes stay in EFFORT_COSTUMES, unused).
-// Avatars are twice the upstream size: `CRAB_SCALE = 2.0 // fork` in register.tsx. The row
+// Avatars are about twice the upstream size: `CRAB_SCALE = 2.1 // fork` in register.tsx. The row
 // geometry that goes with it (row heights 80/74/68, text at x 76) is upstream's lines,
 // changed without markers; see FORK.md.
 import { atom, update } from 'claude-code'
@@ -352,12 +355,102 @@ export const forkPinFirst = (list: AgentRun[]): AgentRun[] => {
 // The subagents only: the band's crew count and working state leave out the main session's row.
 export const forkWorkers = (list: AgentRun[]): AgentRun[] => list.filter(a => a.id !== FORK_ORCH)
 
+// --- Agent names: the first line of every agent row.
+
+export const FORK_ORCH_NAME = 'Wololo'
+// Workers (any non-reviewer subagent): Catalan names, men and women.
+const WORKER_NAMES = [
+  'Pau', 'Oriol', 'Arnau', 'Marc', 'Pol', 'Ferran', 'Biel', 'Martí', 'Guillem', 'Lluís', 'Joan', 'Xavier', 'Quim', 'Roger', 'Jan',
+  'Núria', 'Mireia', 'Laia', 'Meritxell', 'Neus', 'Aina', 'Queralt', 'Carme', 'Berta', 'Ona', 'Júlia', 'Clara',
+]
+// Reviewers: English names, men and women.
+const REVIEWER_NAMES = [
+  'Arthur', 'Edward', 'George', 'Henry', 'Harry', 'Jack', 'James', 'Leo', 'Oliver', 'Oscar', 'Samuel', 'Thomas', 'Walter', 'William', 'Alfred',
+  'Alice', 'Ada', 'Charlotte', 'Eleanor', 'Emily', 'Grace', 'Hazel', 'Lucy', 'Margaret', 'Olivia', 'Rose', 'Ruth', 'Sophie', 'Violet', 'Harriet',
+]
+
+// Names handed out so far, keyed by agent type and task. A task's later rounds (a new run with the
+// same description) keep the name of its first round. Module state: after a reload the names are
+// handed out again, from the same hash, so most come back the same.
+const forkNames = new Map<string, string>()
+const hashOf = (s: string): number => {
+  let h = 2166136261
+  for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619)
+  return h >>> 0
+}
+
+// The agent's name: Wololo for the orchestrator; otherwise a name from its pool picked by hash,
+// skipping names already given to another task while any are left.
+export const forkName = (a: AgentRun): string => {
+  if (a.id === FORK_ORCH || a.type === FORK_ORCH) return FORK_ORCH_NAME
+  const key = `${a.type}\n${a.description || a.id}`
+  const known = forkNames.get(key)
+  if (known) return known
+  const pool = /reviewer/i.test(a.type) ? REVIEWER_NAMES : WORKER_NAMES
+  const taken = new Set(forkNames.values())
+  const start = hashOf(key) % pool.length
+  let name = pool[start] as string
+  for (let i = 0; i < pool.length; i++) {
+    const candidate = pool[(start + i) % pool.length] as string
+    if (!taken.has(candidate)) {
+      name = candidate
+      break
+    }
+  }
+  forkNames.set(key, name)
+  return name
+}
+
 // The stats line under an agent's bar: drops the context label, then the cost, until it fits the bar width.
 export const forkStats = (ctxLabel: string, ctx: number, tokens: string, cost: string, time: string, barW: number, textWidth: (text: string, size: number) => number): string => {
   let stats = `${ctxLabel} ${ctx}% · ${tokens}  ${cost}  ${time}`
   if (textWidth(stats, 11) > barW) stats = `${ctx}% · ${tokens}  ${cost}  ${time}`
   if (textWidth(stats, 11) > barW) stats = `${ctx}% · ${tokens}  ${time}`
   return stats
+}
+
+// The close button, as session-band's: a dim plain "×" (spread into the dismiss Button).
+export const FORK_DISMISS = { label: '×', plain: true, dimColor: true } as const
+
+// Geometry of the savvy-progress band above the prompt (register.tsx's AbovePrompt hook).
+//   - `row`: the same lateral padding as session-band's row (paddingX 1).
+//   - `column`: a blank line between the row and the band drawn below it, only when there is one.
+//   - `crewGroup`: wraps the desktop Svg and the `×N` crew button, so the crew button sits flush
+//     against the band's avatar (the crab at the Svg's right end) with no gap. The group takes the
+//     free width (grows and shrinks) and clips rather than wraps. The row's `gap` then separates
+//     the group from the close button only.
+//   - `svgBox`: wraps the desktop Svg. The Svg draws to a pixel width and does not stretch (a
+//     `width` is a number of CSS pixels; with none it takes the markup's own width), so the
+//     wrapper grows and shrinks with the slot. It aligns the Svg to the end next to the crew button
+//     (flex-end; flex-start in RTL), so any slack sits on the far side, away from the button.
+//   - `svgWidth`: the Svg's width on desktop. About 8 CSS px per reported column; the slot's width
+//     less the padding (2 cells), the one gap between the group and the close button (1 cell) and
+//     the two buttons (label plus half a cell). The gap between the crab and `×N` is gone, so that
+//     cell goes to the Svg, and therefore to the progress bar.
+//   - `barWidth(titleW)`: the terminal's bar width, no longer capped, for the same slot.
+export const forkBand = (bodyColumns: number, crewLabel: string, hasBelow: boolean, rtl: boolean) => {
+  const CELL = 8
+  const button = (label: string): number => label.length * CELL + CELL
+  // SAFETY: native desktop buttons are a little wider than the estimate; a short Svg leaves a sliver,
+  // a long one would clip the percent and the crab at its right end.
+  const SAFETY = 12
+  const reserved = 2 * CELL + 1 * CELL + button(crewLabel) + button(FORK_DISMISS.label) + SAFETY
+  const cols = bodyColumns || 100
+  return {
+    row: { paddingX: 1 },
+    column: hasBelow ? ({ rowGap: 1 } as const) : ({} as const),
+    crewGroup: {
+      flexDirection: rtl ? 'row-reverse' : 'row',
+      alignItems: 'center',
+      columnGap: 0,
+      flexGrow: 1,
+      flexShrink: 1,
+      overflow: 'hidden',
+    } as const,
+    svgBox: { flexDirection: 'row', flexGrow: 1, flexShrink: 1, overflow: 'hidden', justifyContent: rtl ? 'flex-start' : 'flex-end' } as const,
+    svgWidth: Math.max(180, Math.min(3200, cols * CELL - reserved)),
+    barWidth: (titleW: number): number => Math.max(6, cols - titleW - 34),
+  }
 }
 
 // The `models` tool: the orchestrator declares the flow's worker model (e.g. "Haiku") so the

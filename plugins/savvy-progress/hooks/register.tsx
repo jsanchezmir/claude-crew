@@ -2,8 +2,8 @@ import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
 import type { AgentRun, Flow, Panel, Phase, PlannedTask } from '../types'
-import { FORK_COSTUMES, FORK_CRAB_CSS, FORK_ORCH, FORK_TIER_COLOR, FORK_TIER_MODEL, forkCostume, forkOrchestratorStep, forkPinFirst, forkRegister, forkStats, forkTierModel, forkTierOf, forkTurnDone, forkWorkers } from './fork' // fork
-import { forkSessionStart } from './fork' // fork
+import { FORK_COSTUMES, FORK_CRAB_CSS, FORK_ORCH, FORK_TIER_COLOR, FORK_TIER_MODEL, forkCostume, forkName, forkOrchestratorStep, forkPinFirst, forkRegister, forkStats, forkTierModel, forkTierOf, forkTurnDone, forkWorkers } from './fork' // fork
+import { FORK_DISMISS, forkBand, forkSessionStart } from './fork' // fork
 
 const flow = atom({ plugin: 'savvy-progress', key: 'flow' } as const, null)
 const agents = atom({ plugin: 'savvy-progress', key: 'agents' } as const, [])
@@ -619,7 +619,7 @@ const COSTUMES: Record<string, (f: Fill, t: string) => void> = {
 
 const costumeOf = (type: string): string => (type === 'Explore' ? 'explore' : tierOf(type))
 
-const CRAB_SCALE = 2.0 // fork
+const CRAB_SCALE = 2.3 // fork
 
 // Body and props nest inside `bd` so a prop rides the bob and adds its own motion;
 // legs stay outside it and step on their own. `mirror` flips the crab inside its
@@ -717,15 +717,16 @@ const agentSvg = (W: number, a: AgentRun, at: number): string => {
   const fillW = Math.round(barW * (progress ?? ctx / 100))
   return svg(
     W,
-    80,
-    `${rowCrab(W, 0, 4, forkCostume(a, costumeOf), false, a.status === 'running')}
-<text class="t" ${startText(W, 76, 18)} font-family="${FONT}" font-size="13" font-weight="600">${xml(fitText(a.description || a.type, 13, textW))}</text>
-<text ${startText(W, 76, 34)} font-family="${FONT}" font-size="11"><tspan fill="${color}">${xml(tier === 'other' ? a.type : tierWord(tier))}</tspan><tspan class="s">  ${xml(meta.join('  ·  '))}</tspan></text>
-${steps && barW > 30 ? `<text class="t" ${startText(W, 76, 50)} font-family="${FONT}" font-size="11" font-variant-numeric="tabular-nums">${xml(fitText(steps, 11, barW))}</text>` : ''}
-<text class="s" ${endText(W, 76 + barW, 63, true)} font-family="${FONT}" font-size="11" font-variant-numeric="tabular-nums">${stats}</text>
-<rect class="k" x="${mx(W, 76, barW)}" y="69" width="${barW}" height="4" rx="2"/><rect${progress === null ? ' class="m"' : ''} x="${mx(W, 76, fillW)}" y="69" width="${fillW}" height="4" rx="2"${progress === null ? '' : ` fill="${color}"`}/>
-${statusMark(mx(W, W - 8), 16, a.status, color)}
-<line class="ln" x1="0" y1="79.5" x2="${W}" y2="79.5"/>`,
+    96,
+    `${rowCrab(W, 0, 16, forkCostume(a, costumeOf), false, a.status === 'running')}
+<text class="t" ${startText(W, 76, 20)} font-family="${FONT}" font-size="12" font-weight="900">${xml(fitText(forkName(a), 12, textW))}</text>
+<text class="t" ${startText(W, 76, 37)} font-family="${FONT}" font-size="12" font-weight="600">${xml(fitText(a.description || a.type, 12, textW))}</text>
+<text ${startText(W, 76, 53)} font-family="${FONT}" font-size="11"><tspan fill="${color}">${xml(tier === 'other' ? a.type : tierWord(tier))}</tspan><tspan class="s">  ${xml(meta.join('  ·  '))}</tspan></text>
+${steps && barW > 30 ? `<text class="t" ${startText(W, 76, 69)} font-family="${FONT}" font-size="11" font-variant-numeric="tabular-nums">${xml(fitText(steps, 11, barW))}</text>` : ''}
+<text class="s" ${endText(W, 76 + barW, 82, true)} font-family="${FONT}" font-size="11" font-variant-numeric="tabular-nums">${stats}</text>
+<rect class="k" x="${mx(W, 76, barW)}" y="88" width="${barW}" height="4" rx="2"/><rect${progress === null ? ' class="m"' : ''} x="${mx(W, 76, fillW)}" y="88" width="${fillW}" height="4" rx="2"${progress === null ? '' : ` fill="${color}"`}/>
+${statusMark(mx(W, W - 8), 15, a.status, color)}
+<line class="ln" x1="0" y1="95.5" x2="${W}" y2="95.5"/>`,
   )
 }
 
@@ -1094,7 +1095,7 @@ export const register: Register = (on, options) => {
       }
       const shownDone = p.isDoneCollapsed ? 0 : finished.length
       const lines = 1 + (isEmpty ? 1 : 0) + (running.length > 0 ? 1 : 0) + (finished.length > 0 ? 1 : 0) + (planned.length > 0 ? 1 : 0)
-      const gridH = headerHeight(title) + lines * LINE_H + (running.length + shownDone) * 80 + planned.length * 74
+      const gridH = headerHeight(title) + lines * LINE_H + (running.length + shownDone) * 96 + planned.length * 74
       return (
         <Box flexDirection="column">
           {/* The grid sizes the pane; the content is placed over it, as an
@@ -1108,12 +1109,12 @@ export const register: Register = (on, options) => {
             {isEmpty && <Text dimColor>{s.empty}</Text>}
             {running.length > 0 && section('h-run', `${s.running} · ${running.length}`)}
             {running.map(a => (
-              <Svg key={a.id} source={agentSvg(W, a, at)} alt={`${a.description}: ${modelName(a.model)}, ${s.isRunning}`} width={W} height={80} />
+              <Svg key={a.id} source={agentSvg(W, a, at)} alt={`${forkName(a)}, ${a.description}: ${modelName(a.model)}, ${s.isRunning}`} width={W} height={96} />
             ))}
             {finished.length > 0 && toggleDone}
             {!p.isDoneCollapsed &&
               finished.map(a => (
-                <Svg key={a.id} source={agentSvg(W, a, at)} alt={`${a.description}: ${modelName(a.model)}, ${s.isFinished}`} width={W} height={80} />
+                <Svg key={a.id} source={agentSvg(W, a, at)} alt={`${forkName(a)}, ${a.description}: ${modelName(a.model)}, ${s.isFinished}`} width={W} height={96} />
               ))}
             {planned.length > 0 && section('h-plan', `${s.planned} · ${planned.length}`)}
             {planned.map(pl => (
@@ -1138,7 +1139,8 @@ export const register: Register = (on, options) => {
         <Box key={a.id} flexDirection="column" marginBottom={1}>
           <Box flexDirection="row" gap={1}>
             <Text color={color}>▣</Text>
-            <Text bold wrap="truncate-end">
+            <Text bold>{forkName(a)}</Text>
+            <Text wrap="truncate-end">
               {a.description || a.type}
             </Text>
             <Text color={a.status === 'failed' ? 'red' : a.status === 'done' ? 'green' : color}>{STATUS_GLYPH[a.status]}</Text>
@@ -1230,11 +1232,11 @@ export const register: Register = (on, options) => {
       <Button key="savvy-agents" label={`×${crew}`} plain onPress={() => void togglePane($)} />
     )
     const percent = `${Math.round(ratio(f) * 100)}%`
+    const fb = forkBand(e.props.bodyColumns, `×${crew}`, below !== null, isRtl()) // fork
     const dismiss = (
       <Button
         key="savvy-dismiss"
-        label="✕"
-        plain
+        {...FORK_DISMISS} // fork
         role="dismiss"
         onPress={() => update($, flow, () => null)}
       />
@@ -1245,12 +1247,16 @@ export const register: Register = (on, options) => {
       const { Svg } = ui
       // About 8 CSS px per reported column; the rest is the count, the dismiss
       // and their gaps. No floor above the slot: a row wider than it would wrap.
-      const width = Math.max(180, Math.min(1600, (e.props.bodyColumns || 100) * 8 - 96))
+      const width = fb.svgWidth // fork
       return (
-        <Box flexDirection="column">
-          <Box flexDirection={isRtl() ? 'row-reverse' : 'row'} alignItems="center" gap={1}>
-            <Svg source={rowSvg(f, width, isWorking)} alt={`${f.title}: ${label(f)}, ${percent}`} width={width} height={H} />
-            {crewButton}
+        <Box flexDirection="column" {...fb.column}>
+          <Box flexDirection={isRtl() ? 'row-reverse' : 'row'} alignItems="center" gap={1} {...fb.row}>
+            <Box {...fb.crewGroup}>
+              <Box {...fb.svgBox}>
+                <Svg source={rowSvg(f, width, isWorking)} alt={`${f.title}: ${label(f)}, ${percent}`} width={width} height={H} />
+              </Box>
+              {crewButton}
+            </Box>
             {dismiss}
           </Box>
           {below}
@@ -1260,10 +1266,10 @@ export const register: Register = (on, options) => {
 
     const cols = e.props.bodyColumns
     const titleW = Math.max(8, Math.min(30, f.title.length + 2, Math.floor(cols / 3)))
-    const width = Math.max(6, Math.min(40, cols - titleW - 32))
+    const width = fb.barWidth(titleW) // fork
     return (
-      <Box flexDirection="column">
-        <Box flexDirection="row" gap={2}>
+      <Box flexDirection="column" {...fb.column}>
+        <Box flexDirection="row" gap={2} {...fb.row}>
           <Box width={titleW} flexShrink={0}>
             <Text color={f.isFinished ? DONE : ACCENT}>● </Text>
             <Text wrap="truncate-end">{f.title}</Text>

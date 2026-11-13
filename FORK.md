@@ -1,6 +1,6 @@
 # claude-crew
 
-**claude-crew** is a fork of [JohnnyVizz/claude-kit](https://github.com/JohnnyVizz/claude-kit). GitHub: `jsanchezmir/claude-crew`. The fork's remote is `upstream` (JohnnyVizz). The local folder keeps its own name, `claude-kit`; installs use the local clone path, not the repo name.
+**claude-crew** is a fork of [JohnnyVizz/claude-kit](https://github.com/JohnnyVizz/claude-kit). GitHub: `jsanchezmir/claude-crew`. The fork's remote is `upstream` (JohnnyVizz). The local clone lives in `claude-crew`; installs use the local clone path.
 
 ## Keeping the fork in sync
 
@@ -21,15 +21,18 @@ Put fork logic in fork-owned files (they never conflict). Touch upstream files o
 | `FORK.md` | This file |
 | `fork/check.sh` | Post-merge sanity checks |
 | `fork/crew/SKILL.md` | `/crew` launcher (absolute paths inside) |
-| `fork/crew/OVERRIDES.md` | Overrides for savvy-flow sections 0, Progress bar, 1 step 4 (plan-approval gate), 3, 5, 6 |
+| `fork/crew/OVERRIDES.md` | Overrides for savvy-flow sections 0, Progress bar, 1 step 4 (plan-approval gate: `AskUserQuestion` Approve / Refine / Reject), 3, 5, 6 |
 | `fork/small-crew/SKILL.md` | `/small-crew` launcher (three absolute paths inside) |
 | `fork/small-crew/OVERRIDES.md` | Haiku workers, Sonnet reviews, "risky on Haiku" flag; overrides section 6 (plan-approval gate comes from crew) |
 | `fork/supercrew/SKILL.md` | `/supercrew` launcher (three absolute paths inside) |
 | `fork/supercrew/OVERRIDES.md` | Review policy per tier; overrides section 5 and 6 (workers and gate come from crew) |
 | `fork/crew/UPSTREAM_SKILL.sha256` | Hash of the upstream SKILL.md that OVERRIDES.md was last checked against |
+| `fork/session-band/UPSTREAM_ROW.sha256` | Hash of the upstream session-band row JSX (unreachable after the `forkRow` line) that `fork.tsx` was last synced with |
 | `fork/avatar-templates/` | Pixel templates for drawing costumes |
 | `plugins/savvy-flow/agents/savvy-reviewer.md` | Reviewer agent |
-| `plugins/savvy-progress/hooks/fork.tsx` | All panel logic (costumes, orchestrator row, tier maps, `forkSessionStart` with the `models` tool) |
+| `CLAUDE.md` | Repo rules for Claude: English only, read `FORK.md` first |
+| `plugins/savvy-progress/hooks/fork.tsx` | All panel logic (costumes, agent names, orchestrator row, tier maps, `forkSessionStart` with the `models` tool, band `FORK_DISMISS` and `forkBand`) |
+| `plugins/session-band/hooks/fork.tsx` | `forkBand`: draws the whole session-band row, tooltips, other mods' bands below |
 
 ## Skills
 
@@ -41,7 +44,7 @@ All three launchers read the upstream playbook at its absolute path (`plugins/sa
 
 - Playbook: upstream savvy-flow plus `fork/crew/OVERRIDES.md`.
 - Workers: Sonnet, except Fable tier on Opus. The orchestrator calls `models` with no `workers` argument, so each tier keeps its own model label.
-- Plan gate: presents the plan and waits for the user to approve or edit it before delegating.
+- Plan gate: presents the plan, then an `AskUserQuestion` with Approve / Refine / Reject (fallback: a one-line question). Refine = typed changes or a follow-up ask, then the plan is re-presented. Reject = nothing implemented, progress `finished: true`. Nothing is delegated before Approve. `/small-crew` and `/supercrew` inherit it.
 - Review: an independent `savvy-reviewer` runs for every task (Sonnet; Opus for Fable-tier and sensitive changes). When the flow had more than one task, one more review runs over the whole change.
 - Findings: the orchestrator triages them. Two return rounds per task.
 - Invoke: `/crew <task>`.
@@ -77,12 +80,19 @@ All three launchers read the upstream playbook at its absolute path (`plugins/sa
 ## Panel (savvy-progress)
 
 - The orchestrator (main session) row is pinned first, showing model, context and cost.
+- Every agent row starts with the agent's name (12 px, weight 900), then the task on its own line. The orchestrator is always `Wololo`; workers get Catalan names (27) and reviewers English names (30) (`WORKER_NAMES`, `REVIEWER_NAMES` in `fork.tsx`). A name is picked by hash of type + task description, skipping names already in use while any are left, so a task's later rounds keep their name. Names live in module state: after a reload they are handed out again, mostly the same. Planned rows have no name (no agent yet). In the terminal the name goes before the task on the header line.
 - The orchestrator always shows the xhigh Age of Empires "wololo" priest costume, whatever its effort. The effort costumes (low silver crown, medium gold crown, high jeweled crown and scepter) stay in code, unused.
 - Reviewer costumes by effort: low pink, medium lavender, high bluish-lilac, xhigh reddish octopus.
 - Reviewer tier has its own color.
 - Planned rows are labeled with the flow's worker model, set by the `models` tool. Until it is called, planned rows use `FORK_TIER_MODEL` (Sonnet/Opus).
 - Effort mapping (reviewer): Fable/Mythos model or effort `max` wears the xhigh costume; a reviewer on Opus wears xhigh; unknown effort maps to high. The orchestrator ignores effort and model: always xhigh.
 - A worker whose turn answers successfully has its steps closed to `total/total` with the note cleared. A failed worker keeps its last step and note.
+
+## Band (session-band)
+
+- The row is drawn by `forkBand` in `plugins/session-band/hooks/fork.tsx`. Other mods' AbovePrompt bands (`next(e)`, engine placeholder filtered out) are drawn below it, so the session-band + savvy-progress box sits above the Glovo LiteLLM band (LiteLLM draws its own row below whatever `next(e)` returns; upstream swallowed `next(e)`).
+- Desktop icons are interactive Svgs with English `<title>` tooltips. Desktop only: the terminal has no hover and vscode ignores `isInteractive`.
+- savvy-progress band: close button same as session-band (`×`, plain, dimColor); desktop bar fills up to the `×N` button, which sits flush against the band's avatar (no gap, the free width goes to the bar; `crewGroup` in `forkBand`); `paddingX 1` like session-band; `rowGap 1` to the band below only when there is one. session-band does the same, so the spacing is identical whichever of the two mods runs outer (no ordering guarantee between plugins), and there is a blank line before the LiteLLM band too. Button widths on desktop are estimates; unverified visually.
 
 ## Touch points in upstream files
 
@@ -101,32 +111,55 @@ Efforts are unchanged (fable high, heavy xhigh, careful high, medium medium, lig
 
 ### `plugins/savvy-progress/hooks/register.tsx`
 
-Find all with `grep -nE "// fork|FORK_CRAB_CSS|forkCostume\(a, costumeOf\)" register.tsx` (20 lines).
+Find all with `grep -nE "// fork|FORK_CRAB_CSS|forkCostume\(a, costumeOf\)|forkName\(a\)" register.tsx` (28 lines).
 
 | Location | Fork adds | On conflict |
 |---|---|---|
-| imports, after `import type {...} from '../types'` | `import {...} from './fork' // fork`, and a second line `import { forkSessionStart } from './fork' // fork` | Re-add both; keep the name list equal to what is used. The second line is its own so the long list never conflicts with it |
+| imports, after `import type {...} from '../types'` | `import {...} from './fork' // fork`, and a second line `import { FORK_DISMISS, forkBand, forkSessionStart } from './fork' // fork` | Re-add both; keep the name list equal to what is used. The second line is its own so the long list never conflicts with it |
 | `TIER_COLOR` | `...FORK_TIER_COLOR,` before `other` | Re-add the line |
 | `TIER_MODEL` | `...FORK_TIER_MODEL,` as last entry | Re-add the line |
 | `tierOf`, first line | `if (forkTierOf(type)) return FORK_ORCH` | Re-add as first line |
 | `register`, first statement | `forkRegister(on) // fork` (registers the `tool.call` handler for `models`; it uses fork.tsx's own `now` reference to trigger a redraw) | Re-add as first statement |
 | `register`, its own `session.start` handler, before `return started` | `await forkSessionStart($) // fork` (resets the worker model to per-tier and registers the `models` tool) | Re-add as the last statement before `return started` |
 | `tierModel`, first line | `const m = forkTierModel(tier, TIER_MODEL[tier]) // fork` (replaces `const m = TIER_MODEL[tier]`) | Re-add on that line |
-| `const CRAB_SCALE` | `const CRAB_SCALE = 2.0 // fork` (upstream: `1.1`); avatars about twice as big | Re-add with value 2.0 |
+| `const CRAB_SCALE` | `const CRAB_SCALE = 2.1 // fork` (upstream: `1.1`); avatars about twice as big | Re-add with value 2.1 |
 | `CRAB_CSS` template, before `@media` | `${FORK_CRAB_CSS}` (no comment possible) | Re-add on its own line before `@media` |
 | `COSTUMES`, before `other` | `...FORK_COSTUMES,` | Re-add the line |
 | `agentSvg`, `const stats` | `const stats = forkStats(...) // fork` (stats line shortened to fit the bar: drops the context label, then the cost) | Take upstream's `const stats` line out and re-add the hook line in its place |
+| `agentSvg`, name line | `<text ...>${xml(fitText(forkName(a), 12, textW))}</text>` as the first text line, before the task line (inside a template, no comment) | Take upstream's lines, re-add the name line and the fork geometry below |
+| Pane render, the two `agentSvg` `Svg`s | `alt` starts with `${forkName(a)}, ` (inside JSX, no comment) | Take upstream, prefix the alt |
+| terminal `row`, header | `<Text bold>{forkName(a)}</Text>` before the description `Text`, which loses `bold` (inside JSX, no comment) | Re-add the line |
 | `agentSvg`, `rowCrab(...)` | `costumeOf(a.type)` becomes `forkCostume(a, costumeOf)` (inside a template, no comment) | Take upstream line, swap the argument |
 | `compactSvg`, `icons`, two list lines | same swap, with `// fork` | Same |
 | `turn.step` handler | `if (!agentId && usage) return forkOrchestratorStep($, e, usage, windowOf, costOf, result) // fork` before `if (!agentId \|\| !usage) return result` | Re-add before that line |
 | `turn.complete` handler | `await forkTurnDone($, agentId, e.reason) // fork` before final `return next(e)`: orchestrator row done; a subagent that answered gets its steps closed (`total/total`, note cleared) | Re-add |
 | Pane render, after `finished` is computed | `forkPinFirst(running), forkPinFirst(finished)` | Re-add |
 | band, `crew` and `isWorking` | use `forkWorkers(list)` instead of `list` | Take upstream lines, wrap `list` |
+| band (AbovePrompt), before the row | `const fb = forkBand(...) // fork` (`forkBand(bodyColumns, crewLabel, hasBelow, rtl)`) | Re-add; check the args are still in scope |
+| band, dismiss `Button` | `{...FORK_DISMISS} // fork` replaces upstream `label="✕"` and `plain` | Take upstream, swap those two props |
+| band, desktop `const width` | `const width = fb.svgWidth // fork` (replaces upstream formula) | Re-add on that line |
+| band, terminal `const width` | `const width = fb.barWidth(titleW) // fork` | Re-add on that line |
+| band JSX (no marker) | `{...fb.column}` and `{...fb.row}` spreads; `<Box {...fb.crewGroup}>` wrapper around the `<Box {...fb.svgBox}>` (wrapping the `Svg`) and the `{crewButton}`, so the `×N` button sits flush against the avatar | Take upstream JSX, re-add the spreads and both wrappers |
 
-Geometry lines in `agentSvg`, `plannedSvg`, `compactSvg` and the Pane render (upstream row heights 66/46/32, text offset) are upstream lines changed without `// fork` markers; on conflict keep upstream's structure and re-apply the fork sizes below (avatar scale 2.0, text and bars at x 76, icon spacing 70).
+Band geometry: desktop width is computed tightly in `forkBand` (8 px/cell, padding + gaps + button estimates + 12 px safety, cap 3200); terminal bar width is uncapped (`cols - titleW - 34`).
 
-- Fork row heights: agent rows (running and finished) 80, planned rows 74, compact strip 68.
-- Agent rows: title y 18, tier and meta y 34, steps y 50 (full bar width), stats y 63 (right-aligned to the bar end), progress bar y 69 (height 4), separator y 79.5.
+Geometry lines in `agentSvg`, `plannedSvg`, `compactSvg` and the Pane render (upstream row heights 66/46/32, text offset) are upstream lines changed without `// fork` markers; on conflict keep upstream's structure and re-apply the fork sizes below (avatar scale 2.1, text and bars at x 76, icon spacing 70).
+
+- Fork row heights: agent rows (running and finished) 96, planned rows 74, compact strip 68.
+- Agent rows: avatar y 16 (vertically centered on the text block), name y 20 (12 px, weight 900), task y 37 (12 px, weight 600), tier and meta y 53, steps y 69 (full bar width), stats y 82 (right-aligned to the bar end), progress bar y 88 (height 4), status mark y 15, separator y 95.5.
+
+### `plugins/session-band/hooks/register.tsx` and `types/index.d.ts`
+
+Find all with `grep -n "// fork" hooks/register.tsx` (2 lines).
+
+| Location | Fork adds | On conflict |
+|---|---|---|
+| imports | `import { forkBand } from './fork' // fork` | Re-add |
+| AbovePrompt hook, before upstream `return (` | `const forkRow = await forkBand($, e, next, { ...kit }); if (forkRow) return forkRow // fork`; the kit is `s, level, cacheColor, cacheText, tier, icon, gap, speed, turnCost, usd, SPEED, MONEY, SPEED_ICON, MONEY_ICON, contextIcon, contextBar, cacheIcon` | Re-add before `return (`; keep the kit equal to what upstream defines |
+
+- KEY risk: the upstream row JSX after the `forkRow` line is unreachable. Upstream edits there merge without conflict but are silently ignored: port them into `forkBand` in `fork.tsx`. `check.sh` WARNs on a change (hash in `fork/session-band/UPSTREAM_ROW.sha256`).
+- A rename of any local passed in the kit (`GAPS`, `contextBar`, `cacheIcon`, `usd`, ...) breaks the call.
+- `fork.tsx` redeclares `isHidden` with the same literal key and default as `register.tsx`; if upstream changes the default, update `fork.tsx`.
 
 ### Files the fork no longer touches
 
@@ -145,6 +178,8 @@ fork/check.sh
 
 `check.sh` WARNs when upstream's savvy-flow SKILL.md changed: `OVERRIDES.md` replaces whole sections, so upstream edits inside them merge without any conflict. Read `git diff ORIG_HEAD HEAD -- plugins/savvy-flow/skills`, port what matters into `OVERRIDES.md`, then refresh `fork/crew/UPSTREAM_SKILL.sha256` (command in the WARN).
 
+`check.sh` also WARNs when session-band's unreachable upstream row JSX changed. Read `git diff ORIG_HEAD HEAD -- plugins/session-band/hooks/register.tsx`, port what matters into `forkBand` in `plugins/session-band/hooks/fork.tsx`, then refresh `fork/session-band/UPSTREAM_ROW.sha256` (command in the WARN).
+
 General rule for a conflict: keep upstream's version of the line, then re-apply the one-line touch point from the tables above. Never port fork logic into upstream files; it goes in `fork.tsx`. Never edit upstream's SKILL.md or README.md.
 
 Special cases:
@@ -154,11 +189,11 @@ Special cases:
 - **Upstream renames SKILL.md headings**: update the quoted headings in the overrides files (`## 0. Preconditions`, `## 1. Understand and plan (orchestrator only)`, `## 3. Tiering`, `## 5. Adversarial review (orchestrator only)`, `## 6. Close`, and `## Progress bar`). `check.sh` reads them from the OVERRIDES.md files. Re-read the new upstream text for changed semantics.
 - **Upstream adds its own reviewer or changes models**: decide whether to adopt it. If both coexist, rename the fork's agent or drop the override; update `FORK_TIER_MODEL`, `check.sh` expected models and `OVERRIDES.md`.
 - **Upstream changes `hooks.json` modules**: the fork relies on `./register.tsx` being the only module, importing `./fork`. If modules are split, the import must go in whichever file owns the touched code.
-- After resolving: bump `EXPECTED_TOUCH_POINTS` in `fork/check.sh` only if you deliberately added or removed a touch point.
+- After resolving: bump `EXPECTED_TOUCH_POINTS` (savvy-progress) or `EXPECTED_SB_REG` / `EXPECTED_SB_TYPES` (session-band) in `fork/check.sh` only if you deliberately added or removed a touch point.
 
 ## Local install (per machine, not in git)
 
-Replace `<clone>` with the local clone path, `/Users/jordi.sanchez/Development/Glovo/Claude/claude-kit`.
+Replace `<clone>` with the local clone path, `/Users/jordi.sanchez/Development/Glovo/Claude/claude-crew`.
 
 1. `~/.claude/settings.json`, under `env`:
    ```json

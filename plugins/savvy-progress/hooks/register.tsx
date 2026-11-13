@@ -3,6 +3,7 @@ import type { EngineInterface, Register } from 'claude-code'
 
 import type { AgentRun, Flow, Panel, Phase, PlannedTask } from '../types'
 import { FORK_COSTUMES, FORK_CRAB_CSS, FORK_ORCH, FORK_TIER_COLOR, FORK_TIER_MODEL, forkCostume, forkOrchestratorStep, forkPinFirst, forkRegister, forkTierModel, forkTierOf, forkTurnDone, forkWorkers } from './fork' // fork
+import { forkSessionStart } from './fork' // fork
 
 const flow = atom({ plugin: 'savvy-progress', key: 'flow' } as const, null)
 const agents = atom({ plugin: 'savvy-progress', key: 'agents' } as const, [])
@@ -618,7 +619,7 @@ const COSTUMES: Record<string, (f: Fill, t: string) => void> = {
 
 const costumeOf = (type: string): string => (type === 'Explore' ? 'explore' : tierOf(type))
 
-const CRAB_SCALE = 2.2 // fork
+const CRAB_SCALE = 2.0 // fork
 
 // Body and props nest inside `bd` so a prop rides the bob and adds its own motion;
 // legs stay outside it and step on their own. `mirror` flips the crab inside its
@@ -870,6 +871,7 @@ export const register: Register = (on, options) => {
         await update($, now, () => at)
       })()
     })
+    await forkSessionStart($) // fork
     return started
   })
 

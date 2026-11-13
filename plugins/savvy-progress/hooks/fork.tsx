@@ -277,7 +277,7 @@ type ForkStepEvent = { model?: string; effort?: unknown }
 
 // turn.step of the main session (no agentId): feeds the orchestrator's own row.
 // Returns `result` untouched, so register.tsx can `return` this call as is.
-export const forkOrchestratorStep = async <R,>(
+export async function forkOrchestratorStep<R,>(
   $: any,
   agents: any,
   e: ForkStepEvent,
@@ -285,7 +285,7 @@ export const forkOrchestratorStep = async <R,>(
   windowOf: (model: string) => number,
   costOf: (model: string, u: any, isRequest: boolean) => number,
   result: R,
-): Promise<R> => {
+): Promise<R> {
   const model = (usage.model || e.model) as string
   const at = await $.clock.now()
   const prompt =
@@ -317,7 +317,7 @@ export const forkOrchestratorStep = async <R,>(
 }
 
 // turn.complete of the main session (no agentId): its row waits as done until the next request.
-const forkOrchestratorDone = async ($: any, agents: any, now: any): Promise<void> => {
+async function forkOrchestratorDone($: any, agents: any, now: any): Promise<void> {
   const at = await $.clock.now()
   await update($, agents, (list: AgentRun[]) => list.map((a): AgentRun => (a.id === FORK_ORCH ? { ...a, status: 'done', endedAt: at } : a)))
   await update($, now, () => at)
@@ -326,7 +326,7 @@ const forkOrchestratorDone = async ($: any, agents: any, now: any): Promise<void
 // turn.complete of any run, after upstream has set its status. The main session goes through
 // forkOrchestratorDone. A subagent whose turn answered (reason 'answer', status 'done') has its
 // steps closed: done = total, note cleared. A failed run keeps its steps and note.
-export const forkTurnDone = async ($: any, agents: any, now: any, agentId: string | undefined, reason: string | undefined): Promise<void> => {
+export async function forkTurnDone($: any, agents: any, now: any, agentId: string | undefined, reason: string | undefined): Promise<void> {
   if (!agentId) return forkOrchestratorDone($, agents, now)
   if (reason !== 'answer') return
   await update($, agents, (list: AgentRun[]) =>
@@ -348,30 +348,30 @@ export const forkWorkers = (list: AgentRun[]): AgentRun[] => list.filter(a => a.
 // The `models` tool: the orchestrator declares the flow's worker model (e.g. "Haiku") so the
 // planned rows show it. Called from register's first line; the handlers are the fork's own.
 // `now` is register's clock atom: touching it makes the panel and band redraw with the new label.
-export const forkRegister = (on: Parameters<Register>[0], now: any): void => {
-  on('session.start', async ($, e, next) => {
-    const r = await next(e)
-    // A new or reloaded session starts with each tier's own model until a flow declares otherwise.
-    forkWorkerModel = null
-    await $.tool.register({
-      name: 'models',
-      description:
-        'For the main session only: declare the model all savvy-flow workers run on in this flow (e.g. "Haiku"), ' +
-        'so the agents panel shows it on the planned tasks. Call it when presenting the plan. Leave `workers` out when ' +
-        'each tier keeps its own model. A call from a subagent is ignored.',
-      inputSchema: {
-        type: 'object',
-        properties: {
-          workers: {
-            type: 'string',
-            description: "Model all workers run on in this flow, e.g. \"Haiku\". Omit or empty to show each tier's own model.",
-          },
+// Called from register's own session.start handler. The mod has one such handler: the plugin
+// validator rejects two registrations of the same event without a matcher.
+export async function forkSessionStart($: any): Promise<void> {
+  // A new or reloaded session starts with each tier's own model until a flow declares otherwise.
+  forkWorkerModel = null
+  await $.tool.register({
+    name: 'models',
+    description:
+      'For the main session only: declare the model all savvy-flow workers run on in this flow (e.g. "Haiku"), ' +
+      'so the agents panel shows it on the planned tasks. Call it when presenting the plan. Leave `workers` out when ' +
+      'each tier keeps its own model. A call from a subagent is ignored.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        workers: {
+          type: 'string',
+          description: "Model all workers run on in this flow, e.g. \"Haiku\". Omit or empty to show each tier's own model.",
         },
       },
-    })
-    return r
+    },
   })
+}
 
+export const forkRegister = (on: Parameters<Register>[0], now: any): void => {
   on('tool.call', { tool: 'mcp__savvy-progress__models' }, async ($, e) => {
     // Same rule as `progress`: a subagent's call changes nothing.
     if (e.agentId) return { result: 'ignored: only the main session declares the worker model' }

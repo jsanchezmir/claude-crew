@@ -29,7 +29,7 @@ Put fork logic in fork-owned files (they never conflict). Touch upstream files o
 | `fork/crew/UPSTREAM_SKILL.sha256` | Hash of the upstream SKILL.md that OVERRIDES.md was last checked against |
 | `fork/avatar-templates/` | Pixel templates for drawing costumes |
 | `plugins/savvy-flow/agents/savvy-reviewer.md` | Reviewer agent |
-| `plugins/savvy-progress/hooks/fork.tsx` | All panel logic (costumes, orchestrator row, tier maps, `models` tool) |
+| `plugins/savvy-progress/hooks/fork.tsx` | All panel logic (costumes, orchestrator row, tier maps, `forkSessionStart` with the `models` tool) |
 
 ## Skills
 
@@ -86,6 +86,10 @@ All three launchers read the upstream playbook at its absolute path (`plugins/sa
 
 ## Touch points in upstream files
 
+Rule for new touches: one line each, marked `// fork`, and any logic goes in `fork.tsx`. Keep `register.tsx` at one `session.start` handler (the plugin validator rejects two).
+
+Open: `claude plugin validate plugins/savvy-progress` still fails. The validator does not follow `$` or state atoms passed into `fork.tsx` helpers (`forkOrchestratorStep`, `forkTurnDone`, and `update($, agents, ...)` where `agents` is a parameter). Fixing it means passing atoms in a form the validator can read, which changes fork-owned code, not upstream.
+
 ### Worker agents (`plugins/savvy-flow/agents/savvy-{fable,heavy,careful,medium,light}.md`)
 
 | Location | Change | On conflict |
@@ -97,17 +101,18 @@ Efforts are unchanged (fable high, heavy xhigh, careful high, medium medium, lig
 
 ### `plugins/savvy-progress/hooks/register.tsx`
 
-Find all with `grep -nE "// fork|FORK_CRAB_CSS|forkCostume\(a, costumeOf\)" register.tsx` (17 lines).
+Find all with `grep -nE "// fork|FORK_CRAB_CSS|forkCostume\(a, costumeOf\)" register.tsx` (19 lines).
 
 | Location | Fork adds | On conflict |
 |---|---|---|
-| imports, after `import type {...} from '../types'` | `import {...} from './fork' // fork` | Re-add; keep the name list equal to what is used |
+| imports, after `import type {...} from '../types'` | `import {...} from './fork' // fork`, and a second line `import { forkSessionStart } from './fork' // fork` | Re-add both; keep the name list equal to what is used. The second line is its own so the long list never conflicts with it |
 | `TIER_COLOR` | `...FORK_TIER_COLOR,` before `other` | Re-add the line |
 | `TIER_MODEL` | `...FORK_TIER_MODEL,` as last entry | Re-add the line |
 | `tierOf`, first line | `if (forkTierOf(type)) return FORK_ORCH` | Re-add as first line |
-| `register`, first statement | `forkRegister(on, now) // fork` (registers the `models` tool; `now` lets it trigger a redraw) | Re-add as first statement |
+| `register`, first statement | `forkRegister(on, now) // fork` (registers the `turn.step` handler for `models`; `now` lets it trigger a redraw) | Re-add as first statement |
+| `register`, its own `session.start` handler, before `return started` | `await forkSessionStart($) // fork` (resets the worker model to per-tier and registers the `models` tool) | Re-add as the last statement before `return started` |
 | `tierModel`, first line | `const m = forkTierModel(tier, TIER_MODEL[tier]) // fork` (replaces `const m = TIER_MODEL[tier]`) | Re-add on that line |
-| `const CRAB_SCALE` | `const CRAB_SCALE = 2.2 // fork` (upstream: `1.1`); avatars twice as big | Re-add with value 2.2 |
+| `const CRAB_SCALE` | `const CRAB_SCALE = 2.0 // fork` (upstream: `1.1`); avatars about twice as big | Re-add with value 2.0 |
 | `CRAB_CSS` template, before `@media` | `${FORK_CRAB_CSS}` (no comment possible) | Re-add on its own line before `@media` |
 | `COSTUMES`, before `other` | `...FORK_COSTUMES,` | Re-add the line |
 | `agentSvg`, `rowCrab(...)` | `costumeOf(a.type)` becomes `forkCostume(a, costumeOf)` (inside a template, no comment) | Take upstream line, swap the argument |
@@ -117,7 +122,7 @@ Find all with `grep -nE "// fork|FORK_CRAB_CSS|forkCostume\(a, costumeOf\)" regi
 | Pane render, after `finished` is computed | `forkPinFirst(running), forkPinFirst(finished)` | Re-add |
 | band, `crew` and `isWorking` | use `forkWorkers(list)` instead of `list` | Take upstream lines, wrap `list` |
 
-Geometry lines in `agentSvg`, `plannedSvg`, `compactSvg` and the Pane render (upstream row heights 66/46/32, text offset) are upstream lines changed without `// fork` markers; on conflict keep upstream's structure and re-apply the fork sizes below (avatar scale 2.2, text and bars at x 76, icon spacing 70).
+Geometry lines in `agentSvg`, `plannedSvg`, `compactSvg` and the Pane render (upstream row heights 66/46/32, text offset) are upstream lines changed without `// fork` markers; on conflict keep upstream's structure and re-apply the fork sizes below (avatar scale 2.0, text and bars at x 76, icon spacing 70).
 
 - Fork row heights: agent rows (running and finished) 80, planned rows 74, compact strip 68.
 - Agent rows: title y 18, tier and meta y 34, steps y 50 (full bar width), stats y 63 (right-aligned to the bar end), progress bar y 69 (height 4), separator y 79.5.

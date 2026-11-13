@@ -88,7 +88,7 @@ All three launchers read the upstream playbook at its absolute path (`plugins/sa
 
 Rule for new touches: one line each, marked `// fork`, and any logic goes in `fork.tsx`. Keep `register.tsx` at one `session.start` handler (the plugin validator rejects two).
 
-Open: `claude plugin validate plugins/savvy-progress` still fails. The validator does not follow `$` or state atoms passed into `fork.tsx` helpers (`forkOrchestratorStep`, `forkTurnDone`, and `update($, agents, ...)` where `agents` is a parameter). Fixing it means passing atoms in a form the validator can read, which changes fork-owned code, not upstream.
+Rule for `fork.tsx`: it must not receive state atoms as parameters. It declares its own references to `agents` and `now` with the same literal plugin and key as `register.tsx` (the state scan rejects atoms passed as parameters, and a rejected module means the panel does not load). If `register.tsx`'s atom keys or defaults change upstream, update the copies in `fork.tsx`. `fork/check.sh` runs the validator.
 
 ### Worker agents (`plugins/savvy-flow/agents/savvy-{fable,heavy,careful,medium,light}.md`)
 
@@ -101,7 +101,7 @@ Efforts are unchanged (fable high, heavy xhigh, careful high, medium medium, lig
 
 ### `plugins/savvy-progress/hooks/register.tsx`
 
-Find all with `grep -nE "// fork|FORK_CRAB_CSS|forkCostume\(a, costumeOf\)" register.tsx` (19 lines).
+Find all with `grep -nE "// fork|FORK_CRAB_CSS|forkCostume\(a, costumeOf\)" register.tsx` (20 lines).
 
 | Location | Fork adds | On conflict |
 |---|---|---|
@@ -109,16 +109,17 @@ Find all with `grep -nE "// fork|FORK_CRAB_CSS|forkCostume\(a, costumeOf\)" regi
 | `TIER_COLOR` | `...FORK_TIER_COLOR,` before `other` | Re-add the line |
 | `TIER_MODEL` | `...FORK_TIER_MODEL,` as last entry | Re-add the line |
 | `tierOf`, first line | `if (forkTierOf(type)) return FORK_ORCH` | Re-add as first line |
-| `register`, first statement | `forkRegister(on, now) // fork` (registers the `turn.step` handler for `models`; `now` lets it trigger a redraw) | Re-add as first statement |
+| `register`, first statement | `forkRegister(on) // fork` (registers the `tool.call` handler for `models`; it uses fork.tsx's own `now` reference to trigger a redraw) | Re-add as first statement |
 | `register`, its own `session.start` handler, before `return started` | `await forkSessionStart($) // fork` (resets the worker model to per-tier and registers the `models` tool) | Re-add as the last statement before `return started` |
 | `tierModel`, first line | `const m = forkTierModel(tier, TIER_MODEL[tier]) // fork` (replaces `const m = TIER_MODEL[tier]`) | Re-add on that line |
 | `const CRAB_SCALE` | `const CRAB_SCALE = 2.0 // fork` (upstream: `1.1`); avatars about twice as big | Re-add with value 2.0 |
 | `CRAB_CSS` template, before `@media` | `${FORK_CRAB_CSS}` (no comment possible) | Re-add on its own line before `@media` |
 | `COSTUMES`, before `other` | `...FORK_COSTUMES,` | Re-add the line |
+| `agentSvg`, `const stats` | `const stats = forkStats(...) // fork` (stats line shortened to fit the bar: drops the context label, then the cost) | Take upstream's `const stats` line out and re-add the hook line in its place |
 | `agentSvg`, `rowCrab(...)` | `costumeOf(a.type)` becomes `forkCostume(a, costumeOf)` (inside a template, no comment) | Take upstream line, swap the argument |
 | `compactSvg`, `icons`, two list lines | same swap, with `// fork` | Same |
-| `turn.step` handler | `if (!agentId && usage) return forkOrchestratorStep(...)` before `if (!agentId \|\| !usage) return result` | Re-add before that line |
-| `turn.complete` handler | `await forkTurnDone($, agents, now, agentId, e.reason)` before final `return next(e)`: orchestrator row done; a subagent that answered gets its steps closed (`total/total`, note cleared) | Re-add |
+| `turn.step` handler | `if (!agentId && usage) return forkOrchestratorStep($, e, usage, windowOf, costOf, result) // fork` before `if (!agentId \|\| !usage) return result` | Re-add before that line |
+| `turn.complete` handler | `await forkTurnDone($, agentId, e.reason) // fork` before final `return next(e)`: orchestrator row done; a subagent that answered gets its steps closed (`total/total`, note cleared) | Re-add |
 | Pane render, after `finished` is computed | `forkPinFirst(running), forkPinFirst(finished)` | Re-add |
 | band, `crew` and `isWorking` | use `forkWorkers(list)` instead of `list` | Take upstream lines, wrap `list` |
 

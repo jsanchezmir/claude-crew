@@ -3,18 +3,21 @@
 // register.tsx for these features: it only imports from here and has one-line touch points.
 //
 // This file must not import register.tsx (no cycle). Whatever it needs from there (costOf,
-// windowOf, costumeOf, the `agents`/`now` atoms, `$`) is passed in as arguments.
+// windowOf, costumeOf, `$`) is passed in as arguments. The `agents` and `now` atoms are the
+// exception: they are declared here with register.tsx's plugin and key, because the plugin's
+// state scan cannot follow atoms passed in as parameters (the validator rejects that).
 //
 // Touch points in register.tsx (find them with `grep -n "// fork\|FORK_" register.tsx`):
 //   - the import from './fork'
 //   - `...FORK_TIER_COLOR,` in TIER_COLOR (reviewer and orchestrator colors)
 //   - `...FORK_TIER_MODEL,` as the last entry of TIER_MODEL (overrides the upstream values)
 //   - the first line of tierOf (forkTierOf)
-//   - `forkRegister(on, now) // fork` as the first statement of `register` (the `models` tool)
+//   - `forkRegister(on) // fork` as the first statement of `register` (the `models` tool)
 //   - `const m = forkTierModel(tier, TIER_MODEL[tier]) // fork` in tierModel (planned rows)
 //   - `${FORK_CRAB_CSS}` inside CRAB_CSS, before the @media line (a template line cannot
 //     carry a `// fork` comment, so it is only found through FORK_)
 //   - `...FORK_COSTUMES,` in COSTUMES, before `other`
+//   - `const stats = forkStats(...) // fork` in agentSvg (stats line fitted to the bar width)
 //   - the three `forkCostume(a, costumeOf)` call sites: agentSvg's row crab (inside a
 //     template, so no comment) and the two icon lines of compactSvg
 //   - turn.step: one line before `if (!agentId || !usage) return result` (orchestrator row)
@@ -28,13 +31,18 @@
 //
 // Panel decisions made here: the orchestrator always wears the xhigh "wololo" costume,
 // whatever its effort (the other orchestrator costumes stay in EFFORT_COSTUMES, unused).
-// Avatars are twice the upstream size: `CRAB_SCALE = 2.2 // fork` in register.tsx. The row
+// Avatars are twice the upstream size: `CRAB_SCALE = 2.0 // fork` in register.tsx. The row
 // geometry that goes with it (row heights 80/74/68, text at x 76) is upstream's lines,
 // changed without markers; see FORK.md.
-import { update } from 'claude-code'
+import { atom, update } from 'claude-code'
 import type { Register } from 'claude-code'
 
 import type { AgentRun } from '../types'
+
+// register.tsx's `agents` and `now` atoms, referenced here by the same literal plugin/key:
+// the plugin's state scan cannot follow atoms passed in as parameters.
+const agents = atom({ plugin: 'savvy-progress', key: 'agents' } as const, [])
+const now = atom({ plugin: 'savvy-progress', key: 'now' } as const, 0)
 
 const CLAY = '#D97757'
 const INK = '#1F1E1D'
@@ -279,7 +287,6 @@ type ForkStepEvent = { model?: string; effort?: unknown }
 // Returns `result` untouched, so register.tsx can `return` this call as is.
 export async function forkOrchestratorStep<R,>(
   $: any,
-  agents: any,
   e: ForkStepEvent,
   usage: ForkUsage,
   windowOf: (model: string) => number,
@@ -317,7 +324,7 @@ export async function forkOrchestratorStep<R,>(
 }
 
 // turn.complete of the main session (no agentId): its row waits as done until the next request.
-async function forkOrchestratorDone($: any, agents: any, now: any): Promise<void> {
+async function forkOrchestratorDone($: any): Promise<void> {
   const at = await $.clock.now()
   await update($, agents, (list: AgentRun[]) => list.map((a): AgentRun => (a.id === FORK_ORCH ? { ...a, status: 'done', endedAt: at } : a)))
   await update($, now, () => at)
@@ -326,8 +333,8 @@ async function forkOrchestratorDone($: any, agents: any, now: any): Promise<void
 // turn.complete of any run, after upstream has set its status. The main session goes through
 // forkOrchestratorDone. A subagent whose turn answered (reason 'answer', status 'done') has its
 // steps closed: done = total, note cleared. A failed run keeps its steps and note.
-export async function forkTurnDone($: any, agents: any, now: any, agentId: string | undefined, reason: string | undefined): Promise<void> {
-  if (!agentId) return forkOrchestratorDone($, agents, now)
+export async function forkTurnDone($: any, agentId: string | undefined, reason: string | undefined): Promise<void> {
+  if (!agentId) return forkOrchestratorDone($)
   if (reason !== 'answer') return
   await update($, agents, (list: AgentRun[]) =>
     list.map((a): AgentRun => (a.agentId === agentId && a.stepTotal ? { ...a, stepDone: a.stepTotal, stepNote: undefined } : a)),
@@ -345,10 +352,16 @@ export const forkPinFirst = (list: AgentRun[]): AgentRun[] => {
 // The subagents only: the band's crew count and working state leave out the main session's row.
 export const forkWorkers = (list: AgentRun[]): AgentRun[] => list.filter(a => a.id !== FORK_ORCH)
 
+// The stats line under an agent's bar: drops the context label, then the cost, until it fits the bar width.
+export const forkStats = (ctxLabel: string, ctx: number, tokens: string, cost: string, time: string, barW: number, textWidth: (text: string, size: number) => number): string => {
+  let stats = `${ctxLabel} ${ctx}% · ${tokens}  ${cost}  ${time}`
+  if (textWidth(stats, 11) > barW) stats = `${ctx}% · ${tokens}  ${cost}  ${time}`
+  if (textWidth(stats, 11) > barW) stats = `${ctx}% · ${tokens}  ${time}`
+  return stats
+}
+
 // The `models` tool: the orchestrator declares the flow's worker model (e.g. "Haiku") so the
-// planned rows show it. Called from register's first line; the handlers are the fork's own.
-// `now` is register's clock atom: touching it makes the panel and band redraw with the new label.
-// Called from register's own session.start handler. The mod has one such handler: the plugin
+// planned rows show it. Called from register's own session.start handler. The mod has one such handler: the plugin
 // validator rejects two registrations of the same event without a matcher.
 export async function forkSessionStart($: any): Promise<void> {
   // A new or reloaded session starts with each tier's own model until a flow declares otherwise.
@@ -371,7 +384,9 @@ export async function forkSessionStart($: any): Promise<void> {
   })
 }
 
-export const forkRegister = (on: Parameters<Register>[0], now: any): void => {
+// Registered from register's first statement. The handler is the fork's own; it touches the
+// fork's `now` reference so the panel and band redraw with the new label.
+export const forkRegister = (on: Parameters<Register>[0]): void => {
   on('tool.call', { tool: 'mcp__savvy-progress__models' }, async ($, e) => {
     // Same rule as `progress`: a subagent's call changes nothing.
     if (e.agentId) return { result: 'ignored: only the main session declares the worker model' }

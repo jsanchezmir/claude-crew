@@ -2,7 +2,7 @@ import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
 import type { AgentRun, Flow, Panel, Phase, PlannedTask } from '../types'
-import { FORK_COSTUMES, FORK_CRAB_CSS, FORK_ORCH, FORK_TIER_COLOR, FORK_TIER_MODEL, forkCostume, forkOrchestratorStep, forkPinFirst, forkRegister, forkTierModel, forkTierOf, forkTurnDone, forkWorkers } from './fork' // fork
+import { FORK_COSTUMES, FORK_CRAB_CSS, FORK_ORCH, FORK_TIER_COLOR, FORK_TIER_MODEL, forkCostume, forkOrchestratorStep, forkPinFirst, forkRegister, forkStats, forkTierModel, forkTierOf, forkTurnDone, forkWorkers } from './fork' // fork
 import { forkSessionStart } from './fork' // fork
 
 const flow = atom({ plugin: 'savvy-progress', key: 'flow' } as const, null)
@@ -711,14 +711,8 @@ const agentSvg = (W: number, a: AgentRun, at: number): string => {
   if (a.status === 'failed') meta.push(s.failed)
   const barW = textW
   const progress = progressOf(a)
-  const tokens = fmtTokens(a.contextTokens)
-  const cost = `≈${fmtCost(a.costUsd)}`
-  const time = fmtTime(elapsed(a, at))
-  let stats = `${s.ctx} ${ctx}% · ${tokens}  ${cost}  ${time}`
-  if (textWidth(stats, 11) > barW) stats = `${ctx}% · ${tokens}  ${cost}  ${time}`
-  if (textWidth(stats, 11) > barW) stats = `${ctx}% · ${tokens}  ${time}`
+  const stats = forkStats(s.ctx, ctx, fmtTokens(a.contextTokens), `≈${fmtCost(a.costUsd)}`, fmtTime(elapsed(a, at)), barW, textWidth) // fork
   const steps = a.stepTotal ? `${a.stepDone ?? 0}/${a.stepTotal}${a.stepNote ? ' · ' + a.stepNote : ''}` : ''
-  const stepsW = barW
   // Without reported steps the bar falls back to the context, drawn grey.
   const fillW = Math.round(barW * (progress ?? ctx / 100))
   return svg(
@@ -727,7 +721,7 @@ const agentSvg = (W: number, a: AgentRun, at: number): string => {
     `${rowCrab(W, 0, 4, forkCostume(a, costumeOf), false, a.status === 'running')}
 <text class="t" ${startText(W, 76, 18)} font-family="${FONT}" font-size="13" font-weight="600">${xml(fitText(a.description || a.type, 13, textW))}</text>
 <text ${startText(W, 76, 34)} font-family="${FONT}" font-size="11"><tspan fill="${color}">${xml(tier === 'other' ? a.type : tierWord(tier))}</tspan><tspan class="s">  ${xml(meta.join('  ·  '))}</tspan></text>
-${steps && stepsW > 30 ? `<text class="t" ${startText(W, 76, 50)} font-family="${FONT}" font-size="11" font-variant-numeric="tabular-nums">${xml(fitText(steps, 11, stepsW))}</text>` : ''}
+${steps && barW > 30 ? `<text class="t" ${startText(W, 76, 50)} font-family="${FONT}" font-size="11" font-variant-numeric="tabular-nums">${xml(fitText(steps, 11, barW))}</text>` : ''}
 <text class="s" ${endText(W, 76 + barW, 63, true)} font-family="${FONT}" font-size="11" font-variant-numeric="tabular-nums">${stats}</text>
 <rect class="k" x="${mx(W, 76, barW)}" y="69" width="${barW}" height="4" rx="2"/><rect${progress === null ? ' class="m"' : ''} x="${mx(W, 76, fillW)}" y="69" width="${fillW}" height="4" rx="2"${progress === null ? '' : ` fill="${color}"`}/>
 ${statusMark(mx(W, W - 8), 16, a.status, color)}
@@ -803,7 +797,7 @@ async function autoOpen($: EngineInterface, key: string): Promise<void> {
 }
 
 export const register: Register = (on, options) => {
-  forkRegister(on, now) // fork
+  forkRegister(on) // fork
   on('session.start', async ($, e, next) => {
     const started = await next(e)
     lang = await detectLang($, options.language)
@@ -976,7 +970,7 @@ export const register: Register = (on, options) => {
     const result = yield* next(e)
     const agentId = e.agentId
     const usage = result.usage
-    if (!agentId && usage) return forkOrchestratorStep($, agents, e, usage, windowOf, costOf, result) // fork
+    if (!agentId && usage) return forkOrchestratorStep($, e, usage, windowOf, costOf, result) // fork
     if (!agentId || !usage) return result
 
     const model = usage.model || e.model
@@ -1039,7 +1033,7 @@ export const register: Register = (on, options) => {
       )
       await update($, now, () => at)
     }
-    await forkTurnDone($, agents, now, agentId, e.reason) // fork
+    await forkTurnDone($, agentId, e.reason) // fork
     return next(e)
   })
 

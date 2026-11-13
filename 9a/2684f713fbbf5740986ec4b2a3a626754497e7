@@ -1,0 +1,34 @@
+fork/check.sh
+  s_04b5cdfaecd65f::t_30c1483625d725 20
+FORK.md
+  s_04b5cdfaecd65f::t_2ba7da3cecf919 3,196
+  s_04b5cdfaecd65f::t_54cd639eb4b919 142
+  s_04b5cdfaecd65f::t_8b505fae26e097 95
+  s_04b5cdfaecd65f::t_30c1483625d725 153,192
+  s_04b5cdfaecd65f::t_621f4b6ec0935e 35
+plugins/session-band/hooks/fork.tsx
+  s_04b5cdfaecd65f::t_649e26cd98a54a 9,19,74,82,96,100-102,122
+plugins/savvy-progress/hooks/fork.tsx
+  s_04b5cdfaecd65f::t_ba44e131b0128f 29-30
+  s_04b5cdfaecd65f::t_5975c252df176f 418-421,424-425,427-429,437,442-450
+plugins/savvy-progress/hooks/register.tsx
+  s_04b5cdfaecd65f::t_8905c43912ddce 1254-1258
+plugins/session-band/types/index.d.ts
+  s_04b5cdfaecd65f::t_30c1483625d725 17
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "9a2684f713fbbf5740986ec4b2a3a626754497e7",
+  "prompts": {},
+  "sessions": {
+    "s_04b5cdfaecd65f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "382cdbca-0088-4880-8beb-9a3547280c0a",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Jordi Sánchez <23667568+jsanchezmir@users.noreply.github.com>"
+    }
+  }
+}

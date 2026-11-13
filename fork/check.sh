@@ -13,7 +13,7 @@ warn() { echo "WARN  $1"; }
 REG=plugins/savvy-progress/hooks/register.tsx
 FORK=plugins/savvy-progress/hooks/fork.tsx
 SKILL=plugins/savvy-flow/skills/savvy-flow/SKILL.md
-EXPECTED_TOUCH_POINTS=16 # 14 lines with `// fork` + `${FORK_CRAB_CSS}` + forkCostume in agentSvg
+EXPECTED_TOUCH_POINTS=20 # 18 lines with `// fork` (CRAB_SCALE, the forkSessionStart import and hook, and the forkStats line included) + `${FORK_CRAB_CSS}` + forkCostume in agentSvg
 
 # 1. fork-owned files
 missing=""
@@ -54,6 +54,19 @@ if command -v bun >/dev/null 2>&1; then
   fi
 else
   warn "bun not found, skipped bundle check"
+fi
+
+# 4b. plugin validator: the state scan rejects atoms passed into fork.tsx helpers (see FORK.md)
+if command -v claude >/dev/null 2>&1; then
+  vout="$(claude plugin validate plugins/savvy-progress 2>&1 || true)"
+  if grep -q "Validation passed" <<< "$vout"; then
+    pass "claude plugin validate plugins/savvy-progress"
+  else
+    fail "claude plugin validate plugins/savvy-progress"
+    grep -E "✘|❯ modules|No digest" <<< "$vout" | sed 's/^/        /' || true
+  fi
+else
+  warn "claude not found, skipped plugin validation"
 fi
 
 # 5. worker models

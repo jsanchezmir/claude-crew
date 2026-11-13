@@ -1,0 +1,36 @@
+fork/check.sh
+  s_fded5c159bb446::t_009bd2068ed9dd 16
+plugins/savvy-progress/hooks/fork.tsx
+  s_fded5c159bb446::t_009bd2068ed9dd 28-31,33,253-255,262,265-266
+  s_fded5c159bb446::t_60547c7c08c9cb 32
+plugins/savvy-progress/hooks/register.tsx
+  s_fded5c159bb446::t_8abca96cc77b54 729-731,733
+  s_fded5c159bb446::t_25b271b080348a 720
+  s_fded5c159bb446::t_c810bf577407c1 725
+  s_fded5c159bb446::t_fb531225653495 1115
+  s_fded5c159bb446::t_5fc2f6dd326f6d 1101
+  s_fded5c159bb446::t_86668983af380a 771
+  s_fded5c159bb446::t_ba53e275ae7f43 621,707,726-728,740,745-748,750,760,764,766,769-770,1094,1124
+  s_fded5c159bb446::t_e1cdb8ad6cb41c 713-718
+  s_fded5c159bb446::t_a892e1c710bd53 1120
+FORK.md
+  s_fded5c159bb446::t_009bd2068ed9dd 80,84,100,110
+  s_fded5c159bb446::t_77ad8a578783d0 120-123
+  s_fded5c159bb446::t_43f1b4355542ff 124
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "b0d2b3f6bdbd0fec184affcf62d673d22bdb3563",
+  "prompts": {},
+  "sessions": {
+    "s_fded5c159bb446": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2b28d89a-24f4-4073-9120-38418fbfbd7b",
+        "model": "claude-haiku-5-5"
+      },
+      "human_author": "Jordi Sánchez <23667568+jsanchezmir@users.noreply.github.com>"
+    }
+  }
+}

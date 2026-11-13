@@ -2,6 +2,7 @@ import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
 import type { AgentRun, Flow, Panel, Phase, PlannedTask } from '../types'
+import { FORK_COSTUMES, FORK_CRAB_CSS, FORK_ORCH, FORK_TIER_COLOR, FORK_TIER_MODEL, forkCostume, forkOrchestratorStep, forkPinFirst, forkRegister, forkTierModel, forkTierOf, forkTurnDone, forkWorkers } from './fork' // fork
 
 const flow = atom({ plugin: 'savvy-progress', key: 'flow' } as const, null)
 const agents = atom({ plugin: 'savvy-progress', key: 'agents' } as const, [])
@@ -361,6 +362,7 @@ const TIER_COLOR: Record<string, string> = {
   careful: '#BA7517',
   medium: '#378ADD',
   light: '#1D9E75',
+  ...FORK_TIER_COLOR, // fork
   other: '#888780',
 }
 
@@ -373,11 +375,12 @@ const TIER_MODEL: Record<string, [model: string, effort: string]> = {
   careful: ['Opus', 'high'],
   medium: ['Opus', 'medium'],
   light: ['Opus', 'low'],
+  ...FORK_TIER_MODEL, // fork
 }
 
 // "Opus · xhigh", with the effort word in the panel's language; '' for an unknown tier.
 const tierModel = (tier: string): string => {
-  const m = TIER_MODEL[tier]
+  const m = forkTierModel(tier, TIER_MODEL[tier]) // fork
   return m ? `${m[0]} · ${effortWord(m[1])}` : ''
 }
 
@@ -440,6 +443,7 @@ const windowOf = (model: string): number => (/haiku-4|claude-3/i.test(model) ? 2
 
 // `savvy-careful`, or `savvy-flow:savvy-careful` when the agents ship in a plugin.
 const tierOf = (type: string): string => {
+  if (forkTierOf(type)) return FORK_ORCH // fork
   const bare = type.replace(/^[^:]*:/, '')
   const t = bare.replace(/^savvy-/, '').toLowerCase()
   return Object.hasOwn(TIER_COLOR, t) && bare.startsWith('savvy-') ? t : 'other'
@@ -560,6 +564,7 @@ const CRAB_CSS = `<style>
 @keyframes wave{50%{transform:skewY(-12deg) scaleX(.85)}}
 .c-explore.run .it{transform-origin:50% 100%;animation:fence .5s ease-in-out infinite}
 @keyframes fence{50%{transform:rotate(25deg)}}
+${FORK_CRAB_CSS}
 @media (prefers-reduced-motion: reduce){.run,.run g{animation:none!important}}
 </style>`
 
@@ -607,6 +612,7 @@ const COSTUMES: Record<string, (f: Fill, t: string) => void> = {
     f(7, 11, 11, 1, INK); f(18, 11, 4, 3, INK)
     f(27, 6, 1, 9, '#C9CCD2', 'it'); f(26, 15, 3, 1, '#7A4A26', 'it')
   },
+  ...FORK_COSTUMES, // fork
   other: f => crabBody(f),
 }
 
@@ -712,7 +718,7 @@ const agentSvg = (W: number, a: AgentRun, at: number): string => {
   return svg(
     W,
     66,
-    `${rowCrab(W, 0, 14, costumeOf(a.type), false, a.status === 'running')}
+    `${rowCrab(W, 0, 14, forkCostume(a, costumeOf), false, a.status === 'running')}
 <text class="t" ${startText(W, 42, 18)} font-family="${FONT}" font-size="13" font-weight="600">${xml(fitText(a.description || a.type, 13, textW))}</text>
 <text ${startText(W, 42, 34)} font-family="${FONT}" font-size="11"><tspan fill="${color}">${xml(tier === 'other' ? a.type : tierWord(tier))}</tspan><tspan class="s">  ${xml(meta.join('  ·  '))}</tspan></text>
 ${steps && stepsW > 30 ? `<text class="t" ${startText(W, 42, 49)} font-family="${FONT}" font-size="11" font-variant-numeric="tabular-nums">${xml(fitText(steps, 11, stepsW))}</text>` : ''}
@@ -742,8 +748,8 @@ ${statusMark(mx(W, W - 8), 16, 'planned', color)}
 
 const compactSvg = (W: number, list: AgentRun[], planned: Planned[], t: ReturnType<typeof totals>): string => {
   const icons = [
-    ...list.filter(a => a.status === 'running').map(a => ({ k: costumeOf(a.type), c: colorOf(tierOf(a.type)), s: 'running', dim: false })),
-    ...list.filter(a => a.status !== 'running').map(a => ({ k: costumeOf(a.type), c: colorOf(tierOf(a.type)), s: a.status, dim: false })),
+    ...list.filter(a => a.status === 'running').map(a => ({ k: forkCostume(a, costumeOf), c: colorOf(tierOf(a.type)), s: 'running', dim: false })), // fork
+    ...list.filter(a => a.status !== 'running').map(a => ({ k: forkCostume(a, costumeOf), c: colorOf(tierOf(a.type)), s: a.status, dim: false })), // fork
     ...planned.map(p => ({ k: p.tier in TIER_COLOR ? p.tier : 'other', c: colorOf(p.tier), s: 'planned', dim: true })),
   ]
   const fit = Math.max(1, Math.floor((W - 150) / 36))
@@ -791,6 +797,7 @@ async function autoOpen($: EngineInterface, key: string): Promise<void> {
 }
 
 export const register: Register = (on, options) => {
+  forkRegister(on, now) // fork
   on('session.start', async ($, e, next) => {
     const started = await next(e)
     lang = await detectLang($, options.language)
@@ -962,6 +969,7 @@ export const register: Register = (on, options) => {
     const result = yield* next(e)
     const agentId = e.agentId
     const usage = result.usage
+    if (!agentId && usage) return forkOrchestratorStep($, agents, e, usage, windowOf, costOf, result) // fork
     if (!agentId || !usage) return result
 
     const model = usage.model || e.model
@@ -1024,6 +1032,7 @@ export const register: Register = (on, options) => {
       )
       await update($, now, () => at)
     }
+    await forkTurnDone($, agents, now, agentId, e.reason) // fork
     return next(e)
   })
 
@@ -1038,6 +1047,7 @@ export const register: Register = (on, options) => {
 
     const running = list.filter(a => a.status === 'running').reverse()
     const finished = list.filter(a => a.status !== 'running').reverse()
+    forkPinFirst(running), forkPinFirst(finished) // fork
     const planned = plannedOf(f, list)
     const t = totals(list, at)
     // The pane's title says "Agents"; inside, only the flow's own name.
@@ -1213,8 +1223,8 @@ export const register: Register = (on, options) => {
     const ui = $.ui.resolve(e)
     const { Box, Text, Button } = ui
     const list = await read($, agents)
-    const crew = list.length + plannedOf(f, list).length
-    const isWorking = list.some(a => a.status === 'running')
+    const crew = forkWorkers(list).length + plannedOf(f, list).length // fork
+    const isWorking = forkWorkers(list).some(a => a.status === 'running') // fork
     const crewButton = (
       <Button key="savvy-agents" label={`×${crew}`} plain onPress={() => void togglePane($)} />
     )

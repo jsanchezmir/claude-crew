@@ -1,0 +1,69 @@
+plugins/savvy-progress/hooks/fork.tsx
+  s_f14c57a3efcb70::t_3a3bba7d488ae4 28-30,412-427,432-436,438-439
+  s_04b5cdfaecd65f::t_5f2b47629a780a 358-363,365-403,440
+  s_04b5cdfaecd65f::t_3e9a74b7836850 37,364
+  s_f14c57a3efcb70::t_45969fcb5ffa83 428-431,437
+  s_04b5cdfaecd65f::t_a9bd429b92240d 441
+CLAUDE.md
+  s_04b5cdfaecd65f::t_00f4f55811c9a5 1-13
+fork/check.sh
+  s_04b5cdfaecd65f::t_113ade28c4c7f6 21,32
+  s_f14c57a3efcb70::t_3abd900be977c8 16-20,26,77-99
+  s_04b5cdfaecd65f::t_0bf334576f89f1 100
+FORK.md
+  s_04b5cdfaecd65f::t_a87ac2eb1659d1 126,147
+  s_04b5cdfaecd65f::t_113ade28c4c7f6 33-34,115,131-132,149
+  s_04b5cdfaecd65f::t_a549f0e0908c03 130
+  s_04b5cdfaecd65f::t_76baa4008d8e2c 95
+  s_f14c57a3efcb70::t_3abd900be977c8 24,30,35,47,91-94,97,119,139-146,152,154-164,183
+  s_04b5cdfaecd65f::t_2fd7724f6f4af7 83,150
+  s_f14c57a3efcb70::t_0c9b7068df9d07 96
+  s_f14c57a3efcb70::t_9c5158c027f00a 194
+  s_04b5cdfaecd65f::t_82de1629c10f57 148,184
+fork/crew/OVERRIDES.md
+  s_f14c57a3efcb70::t_a69a6d00862335 32,35-38
+  s_f14c57a3efcb70::t_ecfd84066a9e14 33-34
+fork/session-band/UPSTREAM_ROW.sha256
+  s_f14c57a3efcb70::t_e5d5ac70d2ddff 1
+plugins/savvy-progress/hooks/register.tsx
+  s_f14c57a3efcb70::t_d6f15768fb05f5 6,1235,1239,1250,1252-1256,1267,1269-1270
+  s_04b5cdfaecd65f::t_3e9a74b7836850 622,721,723
+  s_04b5cdfaecd65f::t_cce46b536279a6 5,720,724-729,1098,1112,1117,1142-1143
+  s_04b5cdfaecd65f::t_2fd7724f6f4af7 722
+plugins/session-band/types/index.d.ts
+  s_f14c57a3efcb70::t_29353f42645237 17
+plugins/session-band/hooks/fork.tsx
+  s_f14c57a3efcb70::t_2164bb50690876 1-11,14-19,22-29,35-50,52-71,77-91,93-102,104-106,110-115,117-126,128-129,131-135,137,139-166
+  s_f14c57a3efcb70::t_473d9e87512373 12-13
+  s_f14c57a3efcb70::t_1964bac3167e72 136,138
+  s_f14c57a3efcb70::t_29353f42645237 21,72-76,92,103,116,127,130
+  s_04b5cdfaecd65f::t_76baa4008d8e2c 20,30-34
+  s_04b5cdfaecd65f::t_926ba6c1808047 51,107-109
+plugins/session-band/hooks/register.tsx
+  s_f14c57a3efcb70::t_29353f42645237 5
+  s_f14c57a3efcb70::t_473d9e87512373 328
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "ea6f099c36c7cff87f59db5a560fe374042cf8b4",
+  "prompts": {},
+  "sessions": {
+    "s_04b5cdfaecd65f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "382cdbca-0088-4880-8beb-9a3547280c0a",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Jordi Sánchez <23667568+jsanchezmir@users.noreply.github.com>"
+    },
+    "s_f14c57a3efcb70": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a990303f-1865-40c4-8a64-d65b89f552d1",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Jordi Sánchez <23667568+jsanchezmir@users.noreply.github.com>"
+    }
+  }
+}

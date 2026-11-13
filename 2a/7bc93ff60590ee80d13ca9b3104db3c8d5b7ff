@@ -1,0 +1,46 @@
+plugins/savvy-progress/hooks/fork.tsx
+  s_fc341023528218::t_decf2433edf575 364
+  s_fc341023528218::t_bccd8f4dbb40d4 336-337
+  s_fc341023528218::t_b79b19a3b5ba1a 6-8
+  s_fc341023528218::t_831f3ab837279b 20
+  s_fc341023528218::t_8a3b8441b88c7e 355-362
+  s_fc341023528218::t_57f5bb54eff2d7 15
+  s_fc341023528218::t_840b2814b77c5c 37,42-45
+  s_fc341023528218::t_25070545cd3489 387-389
+  s_fc341023528218::t_6f7079ddde16ca 34
+  s_fc341023528218::t_2bdfd10af03c2e 327
+  s_fc341023528218::t_cb1abc7a42e033 46
+fork/check.sh
+  s_fc341023528218::t_050e5bdedff81e 66
+  s_fc341023528218::t_768de655214b07 59-65,67-71
+  s_fc341023528218::t_8ce55fbe8badad 16
+FORK.md
+  s_fc341023528218::t_35e90f861e062b 104
+  s_fc341023528218::t_e427c331bdf50d 112
+  s_fc341023528218::t_2843ca3cbc00ac 121-122
+  s_fc341023528218::t_ef96519de5180a 118
+  s_fc341023528218::t_2829749b0f4a06 91
+plugins/savvy-progress/hooks/register.tsx
+  s_fc341023528218::t_6d219ea78c2bc7 1036
+  s_fc341023528218::t_15d4026ce99a86 5
+  s_fc341023528218::t_f8cc83c2cbde0e 714
+  s_fc341023528218::t_d13f9d88d6942f 800
+  s_fc341023528218::t_16a7447d644c4e 973
+  s_fc341023528218::t_8435f439d1d3e4 724
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "2a7bc93ff60590ee80d13ca9b3104db3c8d5b7ff",
+  "prompts": {},
+  "sessions": {
+    "s_fc341023528218": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "187013ce-b68a-4b73-8749-268bcc9338f8",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Jordi Sánchez <23667568+jsanchezmir@users.noreply.github.com>"
+    }
+  }
+}

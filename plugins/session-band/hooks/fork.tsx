@@ -6,30 +6,24 @@
 // exception: they are declared here with register.tsx's plugin and key, because the plugin's
 // state scan cannot follow atoms passed in as parameters (the validator rejects that).
 //
-// Touch points in register.tsx and types/index.d.ts (find them with `grep -n "// fork" ...`):
+// Touch points in register.tsx (find them with `grep -n "// fork" ...`):
 //   - register.tsx: the import from './fork'
 //   - register.tsx, AbovePrompt hook: one line before the upstream `return (` that returns
 //     `forkBand(...)` (`if (forkRow) return forkRow`). The upstream row JSX below it stays in
 //     place, never reached; it is left as is so that upstream edits to it merge cleanly.
-//   - types/index.d.ts: `isCollapsed: boolean` added to the `session-band` state contract
 //
 // What forkBand changes against upstream's row:
 //   - the row is drawn first and the other mods' bands (`next(e)`) below it in a column
 //     (upstream swallowed them);
-//   - a `▾`/`▸` button before the `×` collapses the row to total cost, cache and context;
 //   - on desktop every icon Svg is interactive and carries an English `<title>` tooltip.
-import { atom, read, update } from 'claude-code'
+import { atom, update } from 'claude-code'
 
-// register.tsx's `isCollapsed` state is declared here and only here (upstream has no such
-// atom); it is part of the 'session-band' contract in types/index.d.ts.
-const isCollapsed = atom({ plugin: 'session-band', key: 'isCollapsed' } as const, false)
 // register.tsx's `isHidden` atom, referenced by the same literal plugin/key.
 const isHidden = atom({ plugin: 'session-band', key: 'isHidden' } as const, false)
 
 const TIPS = {
   speed: 'Output speed of the last response (tokens/s)',
   cost: 'Last turn cost | session total cost',
-  costTotal: 'Session total cost',
   cache: 'Prompt cache time left (1 h from the last response)',
   context: 'Context window usage',
 } as const
@@ -74,11 +68,10 @@ export async function forkBand($: any, e: any, next: (e: any) => unknown, k: For
   const hasHover = e.surface !== 'terminal'
   const tip = (source: string, text: string) =>
     hasHover ? { source: withTitle(source, text), isInteractive: true } : { source }
-  const collapsed = await read($, isCollapsed)
   const { s, level, cacheColor, cacheText, tier, icon, gap } = k
 
   const turnBox =
-    !collapsed && tier <= 2 ? (
+    tier <= 2 ? (
       <Box flexDirection="row" alignItems="center" columnGap={1} flexShrink={0}>
         {tier <= 1 ? <Text dimColor>Turn</Text> : <Text dimColor>#</Text>}
         <Text bold>{String(s.turn)}</Text>
@@ -86,7 +79,7 @@ export async function forkBand($: any, e: any, next: (e: any) => unknown, k: For
     ) : null
 
   const speedBox =
-    !collapsed && tier <= 3 ? (
+    tier <= 3 ? (
       <Box flexDirection="row" alignItems="center" columnGap={1} flexShrink={0}>
         {Svg ? (
           <Svg {...tip(k.SPEED_ICON, TIPS.speed)} alt="speed" width={icon} height={icon} />
@@ -100,13 +93,13 @@ export async function forkBand($: any, e: any, next: (e: any) => unknown, k: For
   const costBox = (
     <Box flexDirection="row" alignItems="center" columnGap={1} flexShrink={0}>
       {Svg ? (
-        <Svg {...tip(k.MONEY_ICON, collapsed ? TIPS.costTotal : TIPS.cost)} alt="cost" width={icon} height={icon} />
+        <Svg {...tip(k.MONEY_ICON, TIPS.cost)} alt="cost" width={icon} height={icon} />
       ) : (
         <Text color={k.MONEY}>$</Text>
       )}
-      <Text bold color={collapsed ? undefined : k.MONEY}>{collapsed ? k.usd(s.total) : k.turnCost}</Text>
-      {!collapsed && tier <= 2 ? <Text dimColor>|</Text> : null}
-      {!collapsed && tier <= 2 ? <Text bold>{k.usd(s.total)}</Text> : null}
+      <Text bold color={k.MONEY}>{k.turnCost}</Text>
+      {tier <= 2 ? <Text dimColor>|</Text> : null}
+      {tier <= 2 ? <Text bold>{k.usd(s.total)}</Text> : null}
     </Box>
   )
 
@@ -126,7 +119,7 @@ export async function forkBand($: any, e: any, next: (e: any) => unknown, k: For
       {Svg ? (
         <Svg {...tip(k.contextIcon(s.context), TIPS.context)} alt="context" width={icon} height={icon} />
       ) : null}
-      {Svg && !collapsed && tier === 0 ? (
+      {Svg && tier === 0 ? (
         <Svg {...tip(k.contextBar(s.context), TIPS.context)} alt={`context ${s.context}%`} width={80} height={6} />
       ) : null}
       <Text bold>{`${s.context}%`}</Text>
@@ -151,13 +144,6 @@ export async function forkBand($: any, e: any, next: (e: any) => unknown, k: For
         {cacheBox}
         <Box flexGrow={1} flexShrink={1} />
         {contextBox}
-        <Button
-          key="collapse"
-          label={collapsed ? '▸' : '▾'}
-          plain
-          dimColor
-          onPress={() => update($, isCollapsed, c => !c)}
-        />
         <Button key="hide" label="×" role="dismiss" plain dimColor onPress={() => update($, isHidden, () => true)} />
       </Box>
       {below}

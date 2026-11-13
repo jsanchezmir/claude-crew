@@ -26,8 +26,8 @@
 //   - the Pane render: one line after `finished` is computed (orchestrator pinned first)
 //   - the band: the `crew` and `isWorking` lines (forkWorkers excludes the orchestrator row)
 //   - the band: `const fb = forkBand(...) // fork`, the two `const width = fb... // fork` lines, and
-//     the `{...FORK_DISMISS} // fork` line; `{...fb.row}`, `{...fb.column}` and `{...fb.svgBox}`
-//     are spread into the band's Boxes (inside JSX, so no comment)
+//     the `{...FORK_DISMISS} // fork` line; `{...fb.row}`, `{...fb.column}`, `{...fb.crewGroup}` and
+//     `{...fb.svgBox}` are spread into the band's Boxes (inside JSX, so no comment)
 //
 // Exports that register.tsx reads while it loads (FORK_TIER_COLOR, FORK_TIER_MODEL,
 // FORK_CRAB_CSS, FORK_COSTUMES) are plain values, available at import time.
@@ -415,12 +415,18 @@ export const FORK_DISMISS = { label: '×', plain: true, dimColor: true } as cons
 // Geometry of the savvy-progress band above the prompt (register.tsx's AbovePrompt hook).
 //   - `row`: the same lateral padding as session-band's row (paddingX 1).
 //   - `column`: a blank line between the row and the band drawn below it, only when there is one.
+//   - `crewGroup`: wraps the desktop Svg and the `×N` crew button, so the crew button sits flush
+//     against the band's avatar (the crab at the Svg's right end) with no gap. The group takes the
+//     free width (grows and shrinks) and clips rather than wraps. The row's `gap` then separates
+//     the group from the close button only.
 //   - `svgBox`: wraps the desktop Svg. The Svg draws to a pixel width and does not stretch (a
 //     `width` is a number of CSS pixels; with none it takes the markup's own width), so the
-//     wrapper grows and shrinks with the slot: if `svgWidth` is a little short the crew and
-//     close buttons still end flush right, if a little long the Svg is clipped, not wrapped.
+//     wrapper grows and shrinks with the slot. It aligns the Svg to the end next to the crew button
+//     (flex-end; flex-start in RTL), so any slack sits on the far side, away from the button.
 //   - `svgWidth`: the Svg's width on desktop. About 8 CSS px per reported column; the slot's width
-//     less the padding (2 cells), the two gaps (2 cells) and the two buttons (label plus half a cell).
+//     less the padding (2 cells), the one gap between the group and the close button (1 cell) and
+//     the two buttons (label plus half a cell). The gap between the crab and `×N` is gone, so that
+//     cell goes to the Svg, and therefore to the progress bar.
 //   - `barWidth(titleW)`: the terminal's bar width, no longer capped, for the same slot.
 export const forkBand = (bodyColumns: number, crewLabel: string, hasBelow: boolean, rtl: boolean) => {
   const CELL = 8
@@ -428,12 +434,20 @@ export const forkBand = (bodyColumns: number, crewLabel: string, hasBelow: boole
   // SAFETY: native desktop buttons are a little wider than the estimate; a short Svg leaves a sliver,
   // a long one would clip the percent and the crab at its right end.
   const SAFETY = 12
-  const reserved = 2 * CELL + 2 * CELL + button(crewLabel) + button(FORK_DISMISS.label) + SAFETY
+  const reserved = 2 * CELL + 1 * CELL + button(crewLabel) + button(FORK_DISMISS.label) + SAFETY
   const cols = bodyColumns || 100
   return {
     row: { paddingX: 1 },
     column: hasBelow ? ({ rowGap: 1 } as const) : ({} as const),
-    svgBox: { flexDirection: 'row', flexGrow: 1, flexShrink: 1, overflow: 'hidden', justifyContent: rtl ? 'flex-end' : 'flex-start' } as const,
+    crewGroup: {
+      flexDirection: rtl ? 'row-reverse' : 'row',
+      alignItems: 'center',
+      columnGap: 0,
+      flexGrow: 1,
+      flexShrink: 1,
+      overflow: 'hidden',
+    } as const,
+    svgBox: { flexDirection: 'row', flexGrow: 1, flexShrink: 1, overflow: 'hidden', justifyContent: rtl ? 'flex-start' : 'flex-end' } as const,
     svgWidth: Math.max(180, Math.min(3200, cols * CELL - reserved)),
     barWidth: (titleW: number): number => Math.max(6, cols - titleW - 34),
   }

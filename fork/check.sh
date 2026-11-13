@@ -17,7 +17,7 @@ SB=plugins/session-band/hooks/register.tsx
 SBFORK=plugins/session-band/hooks/fork.tsx
 SBTYPES=plugins/session-band/types/index.d.ts
 EXPECTED_SB_REG=2 # import forkBand + the forkRow line
-EXPECTED_SB_TYPES=1 # isCollapsed in the PluginState line
+EXPECTED_SB_TYPES=0 # no touch points left in types/index.d.ts
 EXPECTED_TOUCH_POINTS=28 # 22 lines with `// fork` (CRAB_SCALE, the forkSessionStart import and hook, and the forkStats line and the FORK_DISMISS/forkBand band lines included) + `${FORK_CRAB_CSS}` + forkCostume in agentSvg + 4 forkName(a) lines (agentSvg name line, two row alts, terminal row)
 
 # 1. fork-owned files

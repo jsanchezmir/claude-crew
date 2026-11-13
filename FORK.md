@@ -1,6 +1,6 @@
 # claude-crew
 
-**claude-crew** is a fork of [JohnnyVizz/claude-kit](https://github.com/JohnnyVizz/claude-kit). GitHub: `jsanchezmir/claude-crew`. The fork's remote is `upstream` (JohnnyVizz). The local folder keeps its own name, `claude-kit`; installs use the local clone path, not the repo name.
+**claude-crew** is a fork of [JohnnyVizz/claude-kit](https://github.com/JohnnyVizz/claude-kit). GitHub: `jsanchezmir/claude-crew`. The fork's remote is `upstream` (JohnnyVizz). The local clone lives in `claude-crew`; installs use the local clone path.
 
 ## Keeping the fork in sync
 
@@ -32,7 +32,7 @@ Put fork logic in fork-owned files (they never conflict). Touch upstream files o
 | `plugins/savvy-flow/agents/savvy-reviewer.md` | Reviewer agent |
 | `CLAUDE.md` | Repo rules for Claude: English only, read `FORK.md` first |
 | `plugins/savvy-progress/hooks/fork.tsx` | All panel logic (costumes, agent names, orchestrator row, tier maps, `forkSessionStart` with the `models` tool, band `FORK_DISMISS` and `forkBand`) |
-| `plugins/session-band/hooks/fork.tsx` | `forkBand`: draws the whole session-band row, collapse button, tooltips, other mods' bands below |
+| `plugins/session-band/hooks/fork.tsx` | `forkBand`: draws the whole session-band row, tooltips, other mods' bands below |
 
 ## Skills
 
@@ -91,9 +91,8 @@ All three launchers read the upstream playbook at its absolute path (`plugins/sa
 ## Band (session-band)
 
 - The row is drawn by `forkBand` in `plugins/session-band/hooks/fork.tsx`. Other mods' AbovePrompt bands (`next(e)`, engine placeholder filtered out) are drawn below it, so the session-band + savvy-progress box sits above the Glovo LiteLLM band (LiteLLM draws its own row below whatever `next(e)` returns; upstream swallowed `next(e)`).
-- `▾`/`▸` button before `×` collapses the row (state `isCollapsed`). Collapsed shows session total, cache countdown and context %.
 - Desktop icons are interactive Svgs with English `<title>` tooltips. Desktop only: the terminal has no hover and vscode ignores `isInteractive`.
-- savvy-progress band: close button same as session-band (`×`, plain, dimColor); desktop bar fills up to the `×N` button; `paddingX 1` like session-band; `rowGap 1` to the band below only when there is one. session-band does the same, so the spacing is identical whichever of the two mods runs outer (no ordering guarantee between plugins), and there is a blank line before the LiteLLM band too. Button widths on desktop are estimates; unverified visually.
+- savvy-progress band: close button same as session-band (`×`, plain, dimColor); desktop bar fills up to the `×N` button, which sits flush against the band's avatar (no gap, the free width goes to the bar; `crewGroup` in `forkBand`); `paddingX 1` like session-band; `rowGap 1` to the band below only when there is one. session-band does the same, so the spacing is identical whichever of the two mods runs outer (no ordering guarantee between plugins), and there is a blank line before the LiteLLM band too. Button widths on desktop are estimates; unverified visually.
 
 ## Touch points in upstream files
 
@@ -140,7 +139,7 @@ Find all with `grep -nE "// fork|FORK_CRAB_CSS|forkCostume\(a, costumeOf\)|forkN
 | band, dismiss `Button` | `{...FORK_DISMISS} // fork` replaces upstream `label="✕"` and `plain` | Take upstream, swap those two props |
 | band, desktop `const width` | `const width = fb.svgWidth // fork` (replaces upstream formula) | Re-add on that line |
 | band, terminal `const width` | `const width = fb.barWidth(titleW) // fork` | Re-add on that line |
-| band JSX (no marker) | `{...fb.column}` and `{...fb.row}` spreads; `<Box {...fb.svgBox}>` wrapper around the `Svg` | Take upstream JSX, re-add the spreads and wrapper |
+| band JSX (no marker) | `{...fb.column}` and `{...fb.row}` spreads; `<Box {...fb.crewGroup}>` wrapper around the `<Box {...fb.svgBox}>` (wrapping the `Svg`) and the `{crewButton}`, so the `×N` button sits flush against the avatar | Take upstream JSX, re-add the spreads and both wrappers |
 
 Band geometry: desktop width is computed tightly in `forkBand` (8 px/cell, padding + gaps + button estimates + 12 px safety, cap 3200); terminal bar width is uncapped (`cols - titleW - 34`).
 
@@ -151,13 +150,12 @@ Geometry lines in `agentSvg`, `plannedSvg`, `compactSvg` and the Pane render (up
 
 ### `plugins/session-band/hooks/register.tsx` and `types/index.d.ts`
 
-Find all with `grep -n "// fork" hooks/register.tsx types/index.d.ts` (2 + 1 lines).
+Find all with `grep -n "// fork" hooks/register.tsx` (2 lines).
 
 | Location | Fork adds | On conflict |
 |---|---|---|
 | imports | `import { forkBand } from './fork' // fork` | Re-add |
 | AbovePrompt hook, before upstream `return (` | `const forkRow = await forkBand($, e, next, { ...kit }); if (forkRow) return forkRow // fork`; the kit is `s, level, cacheColor, cacheText, tier, icon, gap, speed, turnCost, usd, SPEED, MONEY, SPEED_ICON, MONEY_ICON, contextIcon, contextBar, cacheIcon` | Re-add before `return (`; keep the kit equal to what upstream defines |
-| `types/index.d.ts`, `PluginState` `'session-band'` line | `isCollapsed: boolean // fork` | Re-add |
 
 - KEY risk: the upstream row JSX after the `forkRow` line is unreachable. Upstream edits there merge without conflict but are silently ignored: port them into `forkBand` in `fork.tsx`. `check.sh` WARNs on a change (hash in `fork/session-band/UPSTREAM_ROW.sha256`).
 - A rename of any local passed in the kit (`GAPS`, `contextBar`, `cacheIcon`, `usd`, ...) breaks the call.
@@ -191,11 +189,11 @@ Special cases:
 - **Upstream renames SKILL.md headings**: update the quoted headings in the overrides files (`## 0. Preconditions`, `## 1. Understand and plan (orchestrator only)`, `## 3. Tiering`, `## 5. Adversarial review (orchestrator only)`, `## 6. Close`, and `## Progress bar`). `check.sh` reads them from the OVERRIDES.md files. Re-read the new upstream text for changed semantics.
 - **Upstream adds its own reviewer or changes models**: decide whether to adopt it. If both coexist, rename the fork's agent or drop the override; update `FORK_TIER_MODEL`, `check.sh` expected models and `OVERRIDES.md`.
 - **Upstream changes `hooks.json` modules**: the fork relies on `./register.tsx` being the only module, importing `./fork`. If modules are split, the import must go in whichever file owns the touched code.
-- After resolving: bump `EXPECTED_TOUCH_POINTS` (savvy-progress) or `EXPECTED_SB_REG` / `EXPECTED_SB_TYPES` (session-band) in `fork/check.sh` only if you deliberately added or removed a touch point. `isCollapsed` is declared only in session-band `fork.tsx`.
+- After resolving: bump `EXPECTED_TOUCH_POINTS` (savvy-progress) or `EXPECTED_SB_REG` / `EXPECTED_SB_TYPES` (session-band) in `fork/check.sh` only if you deliberately added or removed a touch point.
 
 ## Local install (per machine, not in git)
 
-Replace `<clone>` with the local clone path, `/Users/jordi.sanchez/Development/Glovo/Claude/claude-kit`.
+Replace `<clone>` with the local clone path, `/Users/jordi.sanchez/Development/Glovo/Claude/claude-crew`.
 
 1. `~/.claude/settings.json`, under `env`:
    ```json

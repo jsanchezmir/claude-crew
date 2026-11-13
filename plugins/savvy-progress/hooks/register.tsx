@@ -619,7 +619,7 @@ const COSTUMES: Record<string, (f: Fill, t: string) => void> = {
 
 const costumeOf = (type: string): string => (type === 'Explore' ? 'explore' : tierOf(type))
 
-const CRAB_SCALE = 2.1 // fork
+const CRAB_SCALE = 2.3 // fork
 
 // Body and props nest inside `bd` so a prop rides the bob and adds its own motion;
 // legs stay outside it and step on their own. `mirror` flips the crab inside its
@@ -1251,10 +1251,12 @@ export const register: Register = (on, options) => {
       return (
         <Box flexDirection="column" {...fb.column}>
           <Box flexDirection={isRtl() ? 'row-reverse' : 'row'} alignItems="center" gap={1} {...fb.row}>
-            <Box {...fb.svgBox}>
-              <Svg source={rowSvg(f, width, isWorking)} alt={`${f.title}: ${label(f)}, ${percent}`} width={width} height={H} />
+            <Box {...fb.crewGroup}>
+              <Box {...fb.svgBox}>
+                <Svg source={rowSvg(f, width, isWorking)} alt={`${f.title}: ${label(f)}, ${percent}`} width={width} height={H} />
+              </Box>
+              {crewButton}
             </Box>
-            {crewButton}
             {dismiss}
           </Box>
           {below}

@@ -1,0 +1,52 @@
+fork/check.sh
+  s_ec04be04077c47::t_2e066380cf8ef4 16
+FORK.md
+  s_ec04be04077c47::t_e8c12e3bf82c8d 115
+  s_ec04be04077c47::t_76e9b18da1db37 125
+  s_ec04be04077c47::t_15705cdd39cf2f 108
+  s_ec04be04077c47::t_0b4bfa063e79f3 89-92
+  s_ec04be04077c47::t_3f82b08182a763 112-113
+  s_ec04be04077c47::t_4c2944a78f4e06 104
+  s_ec04be04077c47::t_61a7672119b3a8 32
+fork/supercrew/SKILL.md
+  s_6571c81e93beef::t_1393b3216f58e4 12-14
+plugins/savvy-progress/hooks/register.tsx
+  s_ec04be04077c47::t_41c28ec6c2d119 6
+  s_ec04be04077c47::t_0fdc879555b291 874
+  s_ec04be04077c47::t_188a872c577ace 622
+fork/small-crew/SKILL.md
+  s_6571c81e93beef::t_1393b3216f58e4 12-14
+plugins/savvy-progress/hooks/fork.tsx
+  s_ec04be04077c47::t_739e1712ab7e53 329
+  s_ec04be04077c47::t_77f54c2b278fd8 353
+  s_ec04be04077c47::t_b8e5d4ed71956d 280
+  s_ec04be04077c47::t_bec956f7ea32b4 288
+  s_ec04be04077c47::t_53c931a5f21945 320
+  s_ec04be04077c47::t_a0419c1462cf42 351-352,354-367,370,372,374
+fork/crew/SKILL.md
+  s_ec04be04077c47::t_34ea159d15306f 12-13
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "a8263d70f18de8cf1ce17bae5cef642abfc8aec0",
+  "prompts": {},
+  "sessions": {
+    "s_6571c81e93beef": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a04f7320-9563-4c77-bfdf-785b801394bc",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "Jordi Sánchez <23667568+jsanchezmir@users.noreply.github.com>"
+    },
+    "s_ec04be04077c47": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "75673cb1-5fc2-4c6c-8499-8f41bb8431b2",
+        "model": "claude-haiku-5-5"
+      },
+      "human_author": "Jordi Sánchez <23667568+jsanchezmir@users.noreply.github.com>"
+    }
+  }
+}

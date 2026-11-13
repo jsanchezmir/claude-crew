@@ -13,7 +13,7 @@ warn() { echo "WARN  $1"; }
 REG=plugins/savvy-progress/hooks/register.tsx
 FORK=plugins/savvy-progress/hooks/fork.tsx
 SKILL=plugins/savvy-flow/skills/savvy-flow/SKILL.md
-EXPECTED_TOUCH_POINTS=16 # 14 lines with `// fork` + `${FORK_CRAB_CSS}` + forkCostume in agentSvg
+EXPECTED_TOUCH_POINTS=17 # 15 lines with `// fork` (CRAB_SCALE included) + `${FORK_CRAB_CSS}` + forkCostume in agentSvg
 
 # 1. fork-owned files
 missing=""

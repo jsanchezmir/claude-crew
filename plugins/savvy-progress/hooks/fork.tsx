@@ -25,6 +25,12 @@
 //
 // Exports that register.tsx reads while it loads (FORK_TIER_COLOR, FORK_TIER_MODEL,
 // FORK_CRAB_CSS, FORK_COSTUMES) are plain values, available at import time.
+//
+// Panel decisions made here: the orchestrator always wears the xhigh "wololo" costume,
+// whatever its effort (the other orchestrator costumes stay in EFFORT_COSTUMES, unused).
+// Avatars are twice the upstream size: `CRAB_SCALE = 2.2 // fork` in register.tsx. The row
+// geometry that goes with it (row heights 80/74/68, text at x 76) is upstream's lines,
+// changed without markers; see FORK.md.
 import { update } from 'claude-code'
 import type { Register } from 'claude-code'
 
@@ -244,18 +250,20 @@ export const FORK_CRAB_CSS = `.kl,.krl,.kgs{opacity:0}
 // What register.tsx spreads into COSTUMES: one costume per effort, plus the two aliases.
 export const FORK_COSTUMES: Record<string, (f: Fill, t: string) => void> = EFFORT_COSTUMES
 
-// The orchestrator and the reviewer dress by the effort their run reports.
-// Max effort, or a Fable/Mythos model, wears the xhigh costume; so does a reviewer
-// moved to Opus (the playbook does that for Fable-tier and sensitive tasks).
+// The reviewer dresses by the effort its run reports. Max effort, or a Fable/Mythos model,
+// wears the xhigh costume; so does a reviewer moved to Opus (the playbook does that for
+// Fable-tier and sensitive tasks). The orchestrator does not use this: it always wears xhigh.
 const effortLevel = (a: AgentRun, base: string): string => {
   if (/fable|mythos/i.test(a.model) || a.effort === 'max') return 'xhigh'
   if (base === 'reviewer' && /opus/i.test(a.model)) return 'xhigh'
   return a.effort === 'low' || a.effort === 'medium' || a.effort === 'high' || a.effort === 'xhigh' ? a.effort : 'high'
 }
 // `costumeOf` is register.tsx's own (upstream) type-to-costume function.
+// The orchestrator always returns the wololo costume (xhigh), whatever its effort or model.
 export const forkCostume = (a: AgentRun, costumeOf: (type: string) => string): string => {
   const base = costumeOf(a.type)
-  return base === FORK_ORCH || base === 'reviewer' ? `${base}-${effortLevel(a, base)}` : base
+  if (base === FORK_ORCH) return 'orchestrator-xhigh'
+  return base === 'reviewer' ? `${base}-${effortLevel(a, base)}` : base
 }
 
 type ForkUsage = {

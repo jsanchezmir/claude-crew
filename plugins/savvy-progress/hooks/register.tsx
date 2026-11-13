@@ -618,7 +618,7 @@ const COSTUMES: Record<string, (f: Fill, t: string) => void> = {
 
 const costumeOf = (type: string): string => (type === 'Explore' ? 'explore' : tierOf(type))
 
-const CRAB_SCALE = 1.1
+const CRAB_SCALE = 2.2 // fork
 
 // Body and props nest inside `bd` so a prop rides the bob and adds its own motion;
 // legs stay outside it and step on their own. `mirror` flips the crab inside its
@@ -704,45 +704,50 @@ const agentSvg = (W: number, a: AgentRun, at: number): string => {
   const tier = tierOf(a.type)
   const color = colorOf(tier)
   const ctx = ctxOf(a)
-  const textW = W - 42 - 22
+  const textW = W - 76 - 22
   const meta = [runModel(a)]
   if (a.round > 1) meta.push(`${s.round} ${a.round}`)
   if (a.status === 'failed') meta.push(s.failed)
   const barW = textW
   const progress = progressOf(a)
-  const stats = `${s.ctx} ${ctx}% · ${fmtTokens(a.contextTokens)}  ≈${fmtCost(a.costUsd)}  ${fmtTime(elapsed(a, at))}`
+  const tokens = fmtTokens(a.contextTokens)
+  const cost = `≈${fmtCost(a.costUsd)}`
+  const time = fmtTime(elapsed(a, at))
+  let stats = `${s.ctx} ${ctx}% · ${tokens}  ${cost}  ${time}`
+  if (textWidth(stats, 11) > barW) stats = `${ctx}% · ${tokens}  ${cost}  ${time}`
+  if (textWidth(stats, 11) > barW) stats = `${ctx}% · ${tokens}  ${time}`
   const steps = a.stepTotal ? `${a.stepDone ?? 0}/${a.stepTotal}${a.stepNote ? ' · ' + a.stepNote : ''}` : ''
-  const stepsW = Math.max(0, barW - textWidth(stats, 11) - 12)
+  const stepsW = barW
   // Without reported steps the bar falls back to the context, drawn grey.
   const fillW = Math.round(barW * (progress ?? ctx / 100))
   return svg(
     W,
-    66,
-    `${rowCrab(W, 0, 14, forkCostume(a, costumeOf), false, a.status === 'running')}
-<text class="t" ${startText(W, 42, 18)} font-family="${FONT}" font-size="13" font-weight="600">${xml(fitText(a.description || a.type, 13, textW))}</text>
-<text ${startText(W, 42, 34)} font-family="${FONT}" font-size="11"><tspan fill="${color}">${xml(tier === 'other' ? a.type : tierWord(tier))}</tspan><tspan class="s">  ${xml(meta.join('  ·  '))}</tspan></text>
-${steps && stepsW > 30 ? `<text class="t" ${startText(W, 42, 49)} font-family="${FONT}" font-size="11" font-variant-numeric="tabular-nums">${xml(fitText(steps, 11, stepsW))}</text>` : ''}
-<text class="s" ${endText(W, 42 + barW, 49, true)} font-family="${FONT}" font-size="11" font-variant-numeric="tabular-nums">${stats}</text>
-<rect class="k" x="${mx(W, 42, barW)}" y="55" width="${barW}" height="4" rx="2"/><rect${progress === null ? ' class="m"' : ''} x="${mx(W, 42, fillW)}" y="55" width="${fillW}" height="4" rx="2"${progress === null ? '' : ` fill="${color}"`}/>
+    80,
+    `${rowCrab(W, 0, 4, forkCostume(a, costumeOf), false, a.status === 'running')}
+<text class="t" ${startText(W, 76, 18)} font-family="${FONT}" font-size="13" font-weight="600">${xml(fitText(a.description || a.type, 13, textW))}</text>
+<text ${startText(W, 76, 34)} font-family="${FONT}" font-size="11"><tspan fill="${color}">${xml(tier === 'other' ? a.type : tierWord(tier))}</tspan><tspan class="s">  ${xml(meta.join('  ·  '))}</tspan></text>
+${steps && stepsW > 30 ? `<text class="t" ${startText(W, 76, 50)} font-family="${FONT}" font-size="11" font-variant-numeric="tabular-nums">${xml(fitText(steps, 11, stepsW))}</text>` : ''}
+<text class="s" ${endText(W, 76 + barW, 63, true)} font-family="${FONT}" font-size="11" font-variant-numeric="tabular-nums">${stats}</text>
+<rect class="k" x="${mx(W, 76, barW)}" y="69" width="${barW}" height="4" rx="2"/><rect${progress === null ? ' class="m"' : ''} x="${mx(W, 76, fillW)}" y="69" width="${fillW}" height="4" rx="2"${progress === null ? '' : ` fill="${color}"`}/>
 ${statusMark(mx(W, W - 8), 16, a.status, color)}
-<line class="ln" x1="0" y1="65.5" x2="${W}" y2="65.5"/>`,
+<line class="ln" x1="0" y1="79.5" x2="${W}" y2="79.5"/>`,
   )
 }
 
 const plannedSvg = (W: number, p: Planned): string => {
   const tier = p.tier in TIER_COLOR ? p.tier : 'other'
   const color = colorOf(tier)
-  const textW = W - 42 - 22
+  const textW = W - 76 - 22
   const meta = [tierModel(tier)]
   if (p.after.length) meta.push(`${tr().after} ${p.after.join(', ')}`)
   return svg(
     W,
-    46,
-    `${rowCrab(W, 0, 6, tier, true)}
-<text class="s" ${startText(W, 42, 18)} font-family="${FONT}" font-size="13" font-weight="600">${xml(fitText(`${p.n}. ${p.title}`, 13, textW))}</text>
-<text ${startText(W, 42, 34)} font-family="${FONT}" font-size="11"><tspan fill="${color}">${xml(tierWord(tier))}</tspan><tspan class="m">  ${xml(meta.filter(Boolean).join('  ·  '))}</tspan></text>
+    74,
+    `${rowCrab(W, 0, 4, tier, true)}
+<text class="s" ${startText(W, 76, 18)} font-family="${FONT}" font-size="13" font-weight="600">${xml(fitText(`${p.n}. ${p.title}`, 13, textW))}</text>
+<text ${startText(W, 76, 34)} font-family="${FONT}" font-size="11"><tspan fill="${color}">${xml(tierWord(tier))}</tspan><tspan class="m">  ${xml(meta.filter(Boolean).join('  ·  '))}</tspan></text>
 ${statusMark(mx(W, W - 8), 16, 'planned', color)}
-<line class="ln" x1="0" y1="45.5" x2="${W}" y2="45.5"/>`,
+<line class="ln" x1="0" y1="73.5" x2="${W}" y2="73.5"/>`,
   )
 }
 
@@ -752,18 +757,18 @@ const compactSvg = (W: number, list: AgentRun[], planned: Planned[], t: ReturnTy
     ...list.filter(a => a.status !== 'running').map(a => ({ k: forkCostume(a, costumeOf), c: colorOf(tierOf(a.type)), s: a.status, dim: false })), // fork
     ...planned.map(p => ({ k: p.tier in TIER_COLOR ? p.tier : 'other', c: colorOf(p.tier), s: 'planned', dim: true })),
   ]
-  const fit = Math.max(1, Math.floor((W - 150) / 36))
+  const fit = Math.max(1, Math.floor((W - 150) / 70))
   const shown = icons.slice(0, fit)
   const more = icons.length - shown.length
   const body = shown
-    .map((ic, i) => rowCrab(W, i * 36, 0, ic.k, ic.dim, ic.s === 'running') + (ic.s === 'running' ? `<circle class="live" cx="${mx(W, i * 36 + 32)}" cy="4" r="3" fill="${ic.c}"/>` : ''))
+    .map((ic, i) => rowCrab(W, i * 70, 0, ic.k, ic.dim, ic.s === 'running') + (ic.s === 'running' ? `<circle class="live" cx="${mx(W, i * 70 + 60)}" cy="4" r="3" fill="${ic.c}"/>` : ''))
     .join('')
-  const x = shown.length * 36 + (more ? 4 : 0)
+  const x = shown.length * 70 + (more ? 4 : 0)
   return svg(
     W,
-    32,
-    `${body}${more ? `<text class="s" ${startText(W, x, 21, false)} font-family="${FONT}" font-size="12">+${more}</text>` : ''}
-<text class="s" ${endText(W, W, 21)} font-family="${FONT}" font-size="12" font-variant-numeric="tabular-nums">≈${fmtCost(t.cost)} · ${fmtTokens(t.tokens)} · ${fmtTime(t.time)}</text>`,
+    68,
+    `${body}${more ? `<text class="s" ${startText(W, x, 36, false)} font-family="${FONT}" font-size="12">+${more}</text>` : ''}
+<text class="s" ${endText(W, W, 36)} font-family="${FONT}" font-size="12" font-variant-numeric="tabular-nums">≈${fmtCost(t.cost)} · ${fmtTokens(t.tokens)} · ${fmtTime(t.time)}</text>`,
   )
 }
 
@@ -1086,14 +1091,14 @@ export const register: Register = (on, options) => {
       if (p.isCompact) {
         return (
           <Box flexDirection="column" gap={1} alignItems={align}>
-            <Svg source={compactSvg(W, list, planned, t)} alt={`${list.length} ${s.agentsCount}, ${summary}`} width={W} height={32} />
+            <Svg source={compactSvg(W, list, planned, t)} alt={`${list.length} ${s.agentsCount}, ${summary}`} width={W} height={68} />
             {toggleCompact}
           </Box>
         )
       }
       const shownDone = p.isDoneCollapsed ? 0 : finished.length
       const lines = 1 + (isEmpty ? 1 : 0) + (running.length > 0 ? 1 : 0) + (finished.length > 0 ? 1 : 0) + (planned.length > 0 ? 1 : 0)
-      const gridH = headerHeight(title) + lines * LINE_H + (running.length + shownDone) * 66 + planned.length * 46
+      const gridH = headerHeight(title) + lines * LINE_H + (running.length + shownDone) * 80 + planned.length * 74
       return (
         <Box flexDirection="column">
           {/* The grid sizes the pane; the content is placed over it, as an
@@ -1107,16 +1112,16 @@ export const register: Register = (on, options) => {
             {isEmpty && <Text dimColor>{s.empty}</Text>}
             {running.length > 0 && section('h-run', `${s.running} · ${running.length}`)}
             {running.map(a => (
-              <Svg key={a.id} source={agentSvg(W, a, at)} alt={`${a.description}: ${modelName(a.model)}, ${s.isRunning}`} width={W} height={66} />
+              <Svg key={a.id} source={agentSvg(W, a, at)} alt={`${a.description}: ${modelName(a.model)}, ${s.isRunning}`} width={W} height={80} />
             ))}
             {finished.length > 0 && toggleDone}
             {!p.isDoneCollapsed &&
               finished.map(a => (
-                <Svg key={a.id} source={agentSvg(W, a, at)} alt={`${a.description}: ${modelName(a.model)}, ${s.isFinished}`} width={W} height={66} />
+                <Svg key={a.id} source={agentSvg(W, a, at)} alt={`${a.description}: ${modelName(a.model)}, ${s.isFinished}`} width={W} height={80} />
               ))}
             {planned.length > 0 && section('h-plan', `${s.planned} · ${planned.length}`)}
             {planned.map(pl => (
-              <Svg key={`plan-${pl.n}`} source={plannedSvg(W, pl)} alt={`${pl.n}. ${pl.title}: ${s.isPlanned}`} width={W} height={46} />
+              <Svg key={`plan-${pl.n}`} source={plannedSvg(W, pl)} alt={`${pl.n}. ${pl.title}: ${s.isPlanned}`} width={W} height={74} />
             ))}
           </Box>
         </Box>

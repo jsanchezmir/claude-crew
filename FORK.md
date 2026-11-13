@@ -77,11 +77,11 @@ All three launchers read the upstream playbook at its absolute path (`plugins/sa
 ## Panel (savvy-progress)
 
 - The orchestrator (main session) row is pinned first, showing model, context and cost.
-- Orchestrator costumes by effort: low silver crown, medium gold crown, high jeweled crown and scepter, xhigh Age of Empires "wololo" priest.
+- The orchestrator always shows the xhigh Age of Empires "wololo" priest costume, whatever its effort. The effort costumes (low silver crown, medium gold crown, high jeweled crown and scepter) stay in code, unused.
 - Reviewer costumes by effort: low pink, medium lavender, high bluish-lilac, xhigh reddish octopus.
 - Reviewer tier has its own color.
 - Planned rows are labeled with the flow's worker model, set by the `models` tool. Until it is called, planned rows use `FORK_TIER_MODEL` (Sonnet/Opus).
-- Effort mapping: Fable/Mythos model or effort `max` wears the xhigh costume; a reviewer on Opus wears xhigh; unknown effort maps to high.
+- Effort mapping (reviewer): Fable/Mythos model or effort `max` wears the xhigh costume; a reviewer on Opus wears xhigh; unknown effort maps to high. The orchestrator ignores effort and model: always xhigh.
 - A worker whose turn answers successfully has its steps closed to `total/total` with the note cleared. A failed worker keeps its last step and note.
 
 ## Touch points in upstream files
@@ -97,7 +97,7 @@ Efforts are unchanged (fable high, heavy xhigh, careful high, medium medium, lig
 
 ### `plugins/savvy-progress/hooks/register.tsx`
 
-Find all with `grep -nE "// fork|FORK_CRAB_CSS|forkCostume\(a, costumeOf\)" register.tsx` (16 lines).
+Find all with `grep -nE "// fork|FORK_CRAB_CSS|forkCostume\(a, costumeOf\)" register.tsx` (17 lines).
 
 | Location | Fork adds | On conflict |
 |---|---|---|
@@ -107,6 +107,7 @@ Find all with `grep -nE "// fork|FORK_CRAB_CSS|forkCostume\(a, costumeOf\)" regi
 | `tierOf`, first line | `if (forkTierOf(type)) return FORK_ORCH` | Re-add as first line |
 | `register`, first statement | `forkRegister(on, now) // fork` (registers the `models` tool; `now` lets it trigger a redraw) | Re-add as first statement |
 | `tierModel`, first line | `const m = forkTierModel(tier, TIER_MODEL[tier]) // fork` (replaces `const m = TIER_MODEL[tier]`) | Re-add on that line |
+| `const CRAB_SCALE` | `const CRAB_SCALE = 2.2 // fork` (upstream: `1.1`); avatars twice as big | Re-add with value 2.2 |
 | `CRAB_CSS` template, before `@media` | `${FORK_CRAB_CSS}` (no comment possible) | Re-add on its own line before `@media` |
 | `COSTUMES`, before `other` | `...FORK_COSTUMES,` | Re-add the line |
 | `agentSvg`, `rowCrab(...)` | `costumeOf(a.type)` becomes `forkCostume(a, costumeOf)` (inside a template, no comment) | Take upstream line, swap the argument |
@@ -115,6 +116,11 @@ Find all with `grep -nE "// fork|FORK_CRAB_CSS|forkCostume\(a, costumeOf\)" regi
 | `turn.complete` handler | `await forkTurnDone($, agents, now, agentId, e.reason)` before final `return next(e)`: orchestrator row done; a subagent that answered gets its steps closed (`total/total`, note cleared) | Re-add |
 | Pane render, after `finished` is computed | `forkPinFirst(running), forkPinFirst(finished)` | Re-add |
 | band, `crew` and `isWorking` | use `forkWorkers(list)` instead of `list` | Take upstream lines, wrap `list` |
+
+Geometry lines in `agentSvg`, `plannedSvg`, `compactSvg` and the Pane render (upstream row heights 66/46/32, text offset) are upstream lines changed without `// fork` markers; on conflict keep upstream's structure and re-apply the fork sizes below (avatar scale 2.2, text and bars at x 76, icon spacing 70).
+
+- Fork row heights: agent rows (running and finished) 80, planned rows 74, compact strip 68.
+- Agent rows: title y 18, tier and meta y 34, steps y 50 (full bar width), stats y 63 (right-aligned to the bar end), progress bar y 69 (height 4), separator y 79.5.
 
 ### Files the fork no longer touches
 

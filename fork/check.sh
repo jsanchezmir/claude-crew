@@ -13,18 +13,23 @@ warn() { echo "WARN  $1"; }
 REG=plugins/savvy-progress/hooks/register.tsx
 FORK=plugins/savvy-progress/hooks/fork.tsx
 SKILL=plugins/savvy-flow/skills/savvy-flow/SKILL.md
-EXPECTED_TOUCH_POINTS=20 # 18 lines with `// fork` (CRAB_SCALE, the forkSessionStart import and hook, and the forkStats line included) + `${FORK_CRAB_CSS}` + forkCostume in agentSvg
+SB=plugins/session-band/hooks/register.tsx
+SBFORK=plugins/session-band/hooks/fork.tsx
+SBTYPES=plugins/session-band/types/index.d.ts
+EXPECTED_SB_REG=2 # import forkBand + the forkRow line
+EXPECTED_SB_TYPES=1 # isCollapsed in the PluginState line
+EXPECTED_TOUCH_POINTS=28 # 22 lines with `// fork` (CRAB_SCALE, the forkSessionStart import and hook, and the forkStats line and the FORK_DISMISS/forkBand band lines included) + `${FORK_CRAB_CSS}` + forkCostume in agentSvg + 4 forkName(a) lines (agentSvg name line, two row alts, terminal row)
 
 # 1. fork-owned files
 missing=""
 for f in FORK.md fork/check.sh fork/crew/SKILL.md fork/crew/OVERRIDES.md fork/small-crew/SKILL.md fork/small-crew/OVERRIDES.md fork/supercrew/SKILL.md fork/supercrew/OVERRIDES.md fork/avatar-templates \
-  plugins/savvy-flow/agents/savvy-reviewer.md "$FORK"; do
+  plugins/savvy-flow/agents/savvy-reviewer.md "$FORK" "$SBFORK" fork/session-band/UPSTREAM_ROW.sha256; do
   [ -e "$f" ] || missing="$missing $f"
 done
 if [ -z "$missing" ]; then pass "fork-owned files exist"; else fail "fork-owned files missing:$missing"; fi
 
 # 2. register.tsx touch points
-tp="$(grep -nE '// fork|\$\{FORK_CRAB_CSS\}|forkCostume\(a, costumeOf\)' "$REG" || true)"
+tp="$(grep -nE '// fork|\$\{FORK_CRAB_CSS\}|forkCostume\(a, costumeOf\)|forkName\(a\)' "$REG" || true)"
 n=0; [ -n "$tp" ] && n="$(printf '%s\n' "$tp" | wc -l | tr -d ' ')"
 if [ "$n" -eq "$EXPECTED_TOUCH_POINTS" ]; then
   pass "register.tsx touch points: $n/$EXPECTED_TOUCH_POINTS"
@@ -67,6 +72,30 @@ if command -v claude >/dev/null 2>&1; then
   fi
 else
   warn "claude not found, skipped plugin validation"
+fi
+
+# 4c. session-band (forked upstream plugin): touch points, validator, unreachable upstream row drift
+n="$(grep -c '// fork' "$SB" || true)"
+if [ "$n" -eq "$EXPECTED_SB_REG" ]; then pass "session-band register.tsx touch points: $n/$EXPECTED_SB_REG"; else fail "session-band register.tsx touch points: $n, expected $EXPECTED_SB_REG (see FORK.md)"; fi
+n="$(grep -c '// fork' "$SBTYPES" || true)"
+if [ "$n" -eq "$EXPECTED_SB_TYPES" ]; then pass "session-band types touch points: $n/$EXPECTED_SB_TYPES"; else fail "session-band types touch points: $n, expected $EXPECTED_SB_TYPES (see FORK.md)"; fi
+if command -v claude >/dev/null 2>&1; then
+  vout="$(claude plugin validate plugins/session-band 2>&1 || true)"
+  if grep -q "Validation passed" <<< "$vout"; then
+    pass "claude plugin validate plugins/session-band"
+  else
+    fail "claude plugin validate plugins/session-band"
+    grep -E "✘|❯ modules|No digest" <<< "$vout" | sed 's/^/        /' || true
+  fi
+fi
+# upstream row JSX after the forkRow line is unreachable: upstream edits there merge silently and must be ported to fork.tsx
+SB_ROW_CMD="awk '/\/\/ fork\$/ && /forkRow/ {f=1; next} f && /^  \}\)\$/ {exit} f' $SB"
+want="$(cat fork/session-band/UPSTREAM_ROW.sha256 2>/dev/null || true)"
+have="$(eval "$SB_ROW_CMD" | shasum -a 256 | cut -d' ' -f1)"
+if [ "$want" = "$have" ]; then
+  pass "session-band upstream row unchanged since fork.tsx was last synced"
+else
+  warn "session-band upstream row JSX changed (unreachable, forkBand draws the row): port it into $SBFORK, then: $SB_ROW_CMD | shasum -a 256 | cut -d' ' -f1 > fork/session-band/UPSTREAM_ROW.sha256"
 fi
 
 # 5. worker models

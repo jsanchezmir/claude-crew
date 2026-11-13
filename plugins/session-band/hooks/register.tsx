@@ -2,6 +2,7 @@ import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
 import type { Cache, Stats } from '../types'
+import { forkBand } from './fork' // fork
 
 // Responses shorter than this are mostly tool-call stubs: their timing is noise.
 const MIN_TOKENS = 20
@@ -324,6 +325,7 @@ export const register: Register = on => {
     const tier = tierFor(e.props.bodyColumns)
     const icon = tier >= 3 ? 18 : 22
 
+    const forkRow = await forkBand($, e, next, { s, level, cacheColor, cacheText, tier, icon, gap: GAPS[tier], speed, turnCost, usd, SPEED, MONEY, SPEED_ICON, MONEY_ICON, contextIcon, contextBar, cacheIcon }); if (forkRow) return forkRow // fork
     return (
       <Box
         flexDirection="row"

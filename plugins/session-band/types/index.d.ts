@@ -14,6 +14,6 @@ export type Cache = {
 
 declare module 'claude-code' {
   interface PluginState {
-    'session-band': { stats: Stats; cache: Cache; isHidden: boolean; isBusy: boolean; warned: number }
+    'session-band': { stats: Stats; cache: Cache; isHidden: boolean; isBusy: boolean; warned: number; isCollapsed: boolean } // fork
   }
 }
